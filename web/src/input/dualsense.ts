@@ -5,8 +5,8 @@
 // the triggers' own motors.  Those take an effect each in the controller's output report, which Chrome and Edge let a
 // page send once the player picked the controller in the browser's list (connectDualSense, from a click: the Controls
 // sheet's), and on later visits without asking (navigator.hid.getDevices).  The report says which of its parts count
-// (its first two bytes): this file sets the triggers' two bits alone, so the motors, the lights and the sound stay
-// the browser's and the system's.  A DualShock 4 has no motors in its triggers: it rumbles, and that is all it can.
+// (its first two bytes): this file sets the triggers' two bits and the motors' (the game's rumble, which the page
+// plays itself on a controller open here: setRumble), so the lights and the sound stay the browser's and the system's.  A DualShock 4 has no motors in its triggers: it rumbles, and that is all it can.
 //
 // The report (Sony's, as the Linux kernel's hid-playstation.c and SDL's SDL_hidapi_ps5.c have it): 47 bytes, sent as
 // report 0x02 on a cable; over Bluetooth as report 0x31 behind a sequence byte and a tag (0x10), padded to 77 bytes
@@ -96,9 +96,14 @@ export function crc32(bytes: Uint8Array): number {
 
 /** The output report that sets both triggers and nothing else: its id and the bytes after it (what sendReport takes).
  *  bluetooth: report 0x31 with seq (0..15) and the CRC, else report 0x02. */
-export function triggerReport(r2: TriggerEffect, l2: TriggerEffect, bluetooth: boolean, seq = 0): { id: number; data: Uint8Array } {
+export function triggerReport(r2: TriggerEffect, l2: TriggerEffect, bluetooth: boolean, seq = 0, rumble?: Rumble): { id: number; data: Uint8Array } {
   const common = new Uint8Array(47);
   common[0] = 0x04 | 0x08;                    // what counts: R2's effect, L2's effect
+  if (rumble) {
+    common[0] |= 0x01 | 0x02;                 // and the two motors, as a DualShock 4's ("compatible vibration")
+    common[2] = level(rumble.weak);           // the right motor: the small, fast one
+    common[3] = level(rumble.strong);         // the left motor: the big, slow one
+  }
   common.set(triggerBytes(r2), 10);
   common.set(triggerBytes(l2), 21);
   if (!bluetooth) return { id: 0x02, data: common };
@@ -111,6 +116,10 @@ export function triggerReport(r2: TriggerEffect, l2: TriggerEffect, bluetooth: b
   data[73] = c & 0xff; data[74] = (c >>> 8) & 0xff; data[75] = (c >>> 16) & 0xff; data[76] = c >>> 24;
   return { id: 0x31, data };
 }
+
+/** the game's rumble for the controller's two motors, 0..1 each */
+export interface Rumble { strong: number; weak: number }
+const level = (v: number) => Math.max(0, Math.min(255, Math.round(v * 255)));
 
 /** what the triggers' effects come from, each time they are worked out */
 export interface TriggerInput {
@@ -206,6 +215,8 @@ class Pad {
   private sentAt = 0;
   private queue: Promise<void> = Promise.resolve();
   private failed = false;
+  /** the game's rumble, which this controller plays from the report too (the page's own, not the browser's) */
+  rumble: Rumble = { strong: 0, weak: 0 };
 
   constructor(readonly dev: HidDevice) {
     this.name = nameOf(dev) ?? 'DualSense';
@@ -222,17 +233,20 @@ class Pad {
    *  every RESEND_MS: a controller that slept and woke has none */
   set(r2: TriggerEffect, l2: TriggerEffect, force = false) {
     if (!this.dev.opened) return;
-    const key = `${triggerBytes(r2).join()}|${triggerBytes(l2).join()}`, now = performance.now(), since = now - this.sentAt;
+    const key = `${triggerBytes(r2).join()}|${triggerBytes(l2).join()}|${level(this.rumble.strong)},${level(this.rumble.weak)}`, now = performance.now(), since = now - this.sentAt;
     if (!force && (key === this.sent ? since < RESEND_MS : since < SEND_MS)) return;
     this.sent = key; this.sentAt = now;
-    const { id, data } = triggerReport(r2, l2, this.bluetooth, this.seq = (this.seq + 1) & 0xf);
+    const { id, data } = triggerReport(r2, l2, this.bluetooth, this.seq = (this.seq + 1) & 0xf, this.rumble);
     this.queue = this.queue.then(() => this.dev.sendReport(id, data as BufferSource)).catch(err => {
       if (!this.failed) { this.failed = true; log(`[pad] ${this.name}: its triggers cannot be set: ${(err as Error)?.message ?? err}`); }
     });
   }
 
+  /** the triggers let go and the motors still */
+  quiet() { this.rumble = { strong: 0, weak: 0 }; this.set(TRIGGER_OFF, TRIGGER_OFF, true); }
+
   close() {
-    this.set(TRIGGER_OFF, TRIGGER_OFF, true);
+    this.quiet();
     this.dev.removeEventListener('inputreport', this.onReport);
     this.queue = this.queue.then(() => this.dev.opened ? this.dev.close() : undefined).catch(() => {});
   }
@@ -266,7 +280,7 @@ function remove(dev: HidDevice) {
 const onHidConnect = (e: Event) => void add((e as HidConnectionEvent).device);
 const onHidDisconnect = (e: Event) => { pads.delete((e as HidConnectionEvent).device); };
 /** the tab closing: the triggers let go (they would keep their last effect until the controller sleeps) */
-const onPageHide = () => { for (const p of pads.values()) p.set(TRIGGER_OFF, TRIGGER_OFF, true); };
+const onPageHide = () => { for (const p of pads.values()) p.quiet(); };
 
 /** While the game runs (the PadPoller's, until the function it returns is called): the controllers picked before
  *  opened, those plugged in or picked later too.  logf: the page's log. */
@@ -294,6 +308,13 @@ export function useDualSense(logf: (s: string) => void): () => void {
 
 /** whether any is open (the poller reads the game's status only then) */
 export const dualSenseOpen = () => pads.size > 0;
+
+/** The game's rumble for every controller open, sent with the triggers' next report (setTriggers).  The page plays a
+ *  DualSense's rumble itself once the controller is open here: Chrome's own (vibrationActuator) stays silent on some
+ *  of them while a page holds the controller through WebHID. */
+export function setRumble(strong: number, weak: number) {
+  for (const p of pads.values()) p.rumble = { strong, weak };
+}
 
 /** both triggers' effects onto every controller open */
 export function setTriggers(r2: TriggerEffect, l2: TriggerEffect) {
@@ -328,7 +349,7 @@ export class TriggerDriver {
   }
 
   /** the game ended: the triggers let go */
-  stop() { for (const p of pads.values()) p.set(TRIGGER_OFF, TRIGGER_OFF, true); }
+  stop() { for (const p of pads.values()) p.quiet(); }
 }
 /** how often the game's status is read for the triggers (ms) */
 const STATUS_MS = 15;

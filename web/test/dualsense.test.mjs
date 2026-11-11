@@ -173,3 +173,16 @@ test('a controller picked before opens while the game runs, takes the effects wh
     assert.equal(dev.opened, false); assert.equal(D.dualSenseOpen(), false);
   } finally { delete globalThis.navigator.hid; }
 });
+
+test('the game\'s rumble rides in the same report: the motors\' two bits and their levels', () => {
+  const off = D.triggerReport(D.TRIGGER_OFF, D.TRIGGER_OFF, false).data;
+  assert.equal(off[0], 0x0c); assert.equal(off[2], 0); assert.equal(off[3], 0);
+  const { data } = D.triggerReport(D.TRIGGER_OFF, D.TRIGGER_OFF, false, 0, { strong: 1, weak: 0.5 });
+  assert.equal(data[0], 0x0f);
+  assert.equal(data[2], 128);   // the right (small) motor: weak
+  assert.equal(data[3], 255);   // the left (big) motor: strong
+  const still = D.triggerReport(D.TRIGGER_OFF, D.TRIGGER_OFF, false, 0, { strong: 0, weak: 0 }).data;
+  assert.equal(still[0], 0x0f); assert.equal(still[2], 0); assert.equal(still[3], 0);
+  const bt = D.triggerReport(D.TRIGGER_OFF, D.TRIGGER_OFF, true, 1, { strong: 0.2, weak: 2 }).data;
+  assert.equal(bt[2], 0x0f); assert.equal(bt[4], 255); assert.equal(bt[5], 51);
+});

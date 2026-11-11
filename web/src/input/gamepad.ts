@@ -54,7 +54,7 @@ import {
 import { HidPadReader, knownPad, OneS2016Reader, oneS2016Android } from './hidpad';
 import { LocalPadWriter } from './local-pads';
 import { allPads, useSteamPads } from './steampad';
-import { TriggerDriver, useDualSense } from './dualsense';
+import { TriggerDriver, dualSenseOpen, isDualSense, setRumble, useDualSense } from './dualsense';
 export { allPads };
 
 export interface PadSnapshot { connected: boolean; buttons: number; axes: number[]; family: number; name: string; index: number; wheel?: boolean }
@@ -595,7 +595,9 @@ export class PadPoller {
   private rumble(g: Gamepad | null) {
     const h = this.h;
     const va = g?.vibrationActuator;
-    const can = !!va && typeof va.playEffect === 'function';
+    // a DualSense open for its triggers plays the rumble from the same report (dualsense.ts), not the browser's
+    const own = !!g && isDualSense(g.id) && dualSenseOpen();
+    const can = own || (!!va && typeof va.playEffect === 'function');
     // the touch controls rumble through the phone's vibration instead (buzz)
     const phone = !g && !!this.touch && typeof navigator.vibrate === 'function';
     if (h && Atomics.load(h, IM_PAD_RUMBLE) !== (can || phone ? 1 : 0)) Atomics.store(h, IM_PAD_RUMBLE, can || phone ? 1 : 0);
@@ -610,6 +612,13 @@ export class PadPoller {
       }
     }
     this.rumbleStrong = strong;
+    if (dualSenseOpen()) setRumble(own ? strong : 0, own ? weak : 0);
+    if (own) {
+      // what the browser was playing on it before it was opened here
+      if (this.rumblePad && typeof this.rumblePad.vibrationActuator?.reset === 'function') void this.rumblePad.vibrationActuator.reset().catch(() => {});
+      this.rumbleNow = [0, 0]; this.rumblePad = null;
+      return;
+    }
     const [ps, pw] = this.rumbleNow, playing = ps > 0 || pw > 0;
     if (strong < 0.02 && weak < 0.02) {
       if (playing || (this.rumblePad && this.rumblePad !== g)) {
