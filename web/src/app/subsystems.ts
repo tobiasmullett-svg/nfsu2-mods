@@ -43,7 +43,7 @@ export const attachAudio: AttachAudio = async (proc, o) => {
 };
 
 export const attachInput: AttachInput = (proc, element, o) =>
-  inputAttach(proc, element, { log: o.log, viewRect: o.viewRect, toggleFullscreen: o.toggleFullscreen, padPage: o.padPage });
+  inputAttach(proc, element, { log: o.log, viewRect: o.viewRect, toggleFullscreen: o.toggleFullscreen, padPage: o.padPage, padStatus: o.padStatus });
 
 export const attachNet: AttachNet = (proc, o) => {
   const link = netAttach(proc, { name: o.name, id: o.id, was: o.was, claim: o.claim, block: o.block, log: o.log, onNotice: o.notice, onLobby: o.lobby, onSay: o.say, onBump: o.bump, onBattle: o.battle, onCoop: o.coop, onFriend: o.friend, onBack: o.back,

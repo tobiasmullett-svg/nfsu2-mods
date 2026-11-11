@@ -14,6 +14,7 @@
 
 import { allPads, drivingPad, familyOf, PAD_DRIVER_EVENT } from '../input/gamepad';
 import { connectSteamPad, steamPadsPicked, steamPadsPossible } from '../input/steampad';
+import { connectDualSense, dualSensePicked, dualSensePossible } from '../input/dualsense';
 import { PADF_PLAYSTATION } from '../input/proto';
 import { wheelSection } from './wheel-setup';
 import { askMotion, levelHorizon, menuSize, nitroSteerSide, onSteering, setSteering, steering, STEERING, steeringName, touchPosition,
@@ -196,12 +197,14 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
       <label class="opt"><input type="radio" name="${id}-fam" value="ps">PlayStation</label>
     </div>
     ${steamPadsPossible() ? '<p class="hint steam-state"></p><div class="row"><button type="button" class="btn" data-steam></button></div>' : ''}
+    ${dualSensePossible() ? '<p class="hint ds-state"></p><div class="row"><button type="button" class="btn" data-ds></button></div>' : ''}
     </div>`;
     pad.append(wheel.box, ...kept);
     svg = pad.querySelector('svg')!;
     radios = [...pad.querySelectorAll<HTMLInputElement>('.pad-foot input[type="radio"]')];
     for (const r of radios) r.onchange = () => { if (r.checked) sheet.family(r.value as Family); };
     steamPart();
+    dualSensePart();
     wheel.relabel();
     requestAnimationFrame(fit);
   };
@@ -219,6 +222,20 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
     show([]);
     void steamPadsPicked().then(show);
     btn.onclick = () => connectSteamPad().then(() => steamPadsPicked()).then(show, () => {});
+  };
+  /** A DualSense's adaptive triggers, where the browser can set them (dualsense.ts: WebHID): those connected in this
+   *  browser for it, and the button that opens the browser's list (as the Steam Controller's) */
+  const dualSensePart = () => {
+    const btn = pad.querySelector<HTMLButtonElement>('[data-ds]'), state = pad.querySelector<HTMLElement>('.ds-state');
+    if (!btn || !state) return;
+    const show = (names: string[]) => {
+      state.textContent = names.length ? t('{names}: the triggers push back as you drive.', { names: names.join(', ') })
+        : t('DualSense: connect it once and its triggers push back as you drive.');
+      btn.textContent = names.length ? t('Connect another') : t('Connect a DualSense');
+    };
+    show([]);
+    void dualSensePicked().then(show);
+    btn.onclick = () => connectDualSense().then(() => dualSensePicked()).then(show, () => {});
   };
   /** a label too long for the drawing (another language's words) a little smaller, so it stays inside the 336 px;
    *  measured once the tab shows (a hidden one has no size).  Measured again after each change: a renderer that draws

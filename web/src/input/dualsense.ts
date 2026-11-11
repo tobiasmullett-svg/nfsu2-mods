@@ -1,0 +1,358 @@
+// A DualSense's adaptive triggers (Sony's PS5 controller, and the DualSense Edge), driven through WebHID while the
+// game runs: the throttle (R2) and the brake (L2) push back, and shake, with what the car does.
+//
+// The Gamepad API reads the controller and plays the game's rumble on its motors (gamepad.ts), but has no word for
+// the triggers' own motors.  Those take an effect each in the controller's output report, which Chrome and Edge let a
+// page send once the player picked the controller in the browser's list (connectDualSense, from a click: the Controls
+// sheet's), and on later visits without asking (navigator.hid.getDevices).  The report says which of its parts count
+// (its first two bytes): this file sets the triggers' two bits alone, so the motors, the lights and the sound stay
+// the browser's and the system's.  A DualShock 4 has no motors in its triggers: it rumbles, and that is all it can.
+//
+// The report (Sony's, as the Linux kernel's hid-playstation.c and SDL's SDL_hidapi_ps5.c have it): 47 bytes, sent as
+// report 0x02 on a cable; over Bluetooth as report 0x31 behind a sequence byte and a tag (0x10), padded to 77 bytes
+// that end in a CRC-32 of 0xA2, the report id and the bytes before it.  Bytes 10 to 20 are R2's effect and 21 to 31
+// L2's: a mode and ten parameters.  The modes used here are the two that take a strength for each tenth of the
+// trigger's travel ("zones", 3 bits each: 0 to 7 for strengths 1 to 8, under a mask of the zones in use): 0x21 pushes
+// back, 0x26 shakes at a frequency (Hz, its ninth parameter); 0x05 lets the trigger go.
+//
+// What the triggers do (triggerEffects) comes from the game's status table (runtime/web/status_web.c: "drive",
+// "car_speed", "car_rpm", "car_gear"), the game's rumble levels and the triggers' own positions:
+//   R2, the throttle  a light spring; a kick when the gearbox shifts; a fine shake while the engine sits at the top
+//                     of its revs (the highest it has reached in this car, once it has come down from there: the
+//                     limiter, or an automatic's shift point), and while the wheels spin off the line
+//   L2, the brake     a spring that stiffens with the car's speed; a slow judder while it is held down hard at speed
+//   both              a shake with a crash (the game's strong rumble)
+// A game built before those status words has only "drive": the springs alone.  Outside driving (menus, the pause, a
+// hidden or unfocused page, the game's end) both triggers are let go.
+
+import type { PadSnapshot } from './gamepad';
+import { PAD_AXIS_LT, PAD_AXIS_RT } from './proto';
+
+/** a WebHID device, as much of it as this file uses (TypeScript's DOM types have none) */
+interface HidDevice extends EventTarget {
+  readonly opened: boolean;
+  readonly vendorId: number;
+  readonly productId: number;
+  readonly productName: string;
+  readonly collections: readonly { outputReports?: readonly { reportId?: number }[] }[];
+  open(): Promise<void>;
+  close(): Promise<void>;
+  sendReport(reportId: number, data: BufferSource): Promise<void>;
+}
+interface HidReportEvent extends Event { readonly reportId: number }
+interface HidConnectionEvent extends Event { readonly device: HidDevice }
+interface Hid extends EventTarget {
+  getDevices(): Promise<HidDevice[]>;
+  requestDevice(o: { filters: { vendorId: number; productId?: number }[] }): Promise<HidDevice[]>;
+}
+const hid = (): Hid | null => (globalThis.navigator as unknown as { hid?: Hid } | undefined)?.hid ?? null;
+
+const SONY = 0x054c;
+/** the controllers with adaptive triggers, by USB product id */
+export const DUALSENSE_PRODUCTS: Readonly<Record<number, string>> = { 0x0ce6: 'DualSense', 0x0df2: 'DualSense Edge' };
+const nameOf = (d: HidDevice): string | null => d.vendorId === SONY ? DUALSENSE_PRODUCTS[d.productId] ?? null : null;
+/** whether a Gamepad.id is one of them (Chrome: "... Vendor: 054c Product: 0ce6)") */
+export const isDualSense = (id: string) => /Vendor: 054c Product: (0ce6|0df2)\)/i.test(id);
+
+// ---- the effects ---------------------------------------------------------------------------------------------------
+
+/** a trigger's effect: let go; pushing back, a strength 0..8 for each tenth of its travel; shaking at hz, likewise */
+export type TriggerEffect =
+  | { kind: 'off' }
+  | { kind: 'push'; zones: readonly number[] }
+  | { kind: 'shake'; hz: number; zones: readonly number[] };
+export const TRIGGER_OFF: TriggerEffect = { kind: 'off' };
+
+/** an effect as the report's 11 bytes: the mode and its parameters */
+export function triggerBytes(e: TriggerEffect): Uint8Array {
+  const out = new Uint8Array(11);
+  if (e.kind === 'off') { out[0] = 0x05; return out; }
+  let active = 0, force = 0;
+  for (let i = 0; i < 10; i++) {
+    const s = Math.max(0, Math.min(8, Math.round(e.zones[i] ?? 0)));
+    if (!s) continue;
+    active |= 1 << i;
+    force += (s - 1) * 2 ** (3 * i);          // 30 bits: past a 32-bit shift's sign
+  }
+  if (!active) { out[0] = 0x05; return out; }
+  out[0] = e.kind === 'push' ? 0x21 : 0x26;
+  out[1] = active & 0xff; out[2] = active >> 8;
+  out[3] = force & 0xff; out[4] = (force >>> 8) & 0xff; out[5] = (force >>> 16) & 0xff; out[6] = Math.floor(force / 2 ** 24) & 0xff;
+  if (e.kind === 'shake') out[9] = Math.max(1, Math.min(255, Math.round(e.hz)));
+  return out;
+}
+
+const CRC = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+  return t;
+})();
+/** CRC-32 (zlib's) of the bytes */
+export function crc32(bytes: Uint8Array): number {
+  let c = 0xffffffff;
+  for (const b of bytes) c = CRC[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+/** The output report that sets both triggers and nothing else: its id and the bytes after it (what sendReport takes).
+ *  bluetooth: report 0x31 with seq (0..15) and the CRC, else report 0x02. */
+export function triggerReport(r2: TriggerEffect, l2: TriggerEffect, bluetooth: boolean, seq = 0): { id: number; data: Uint8Array } {
+  const common = new Uint8Array(47);
+  common[0] = 0x04 | 0x08;                    // what counts: R2's effect, L2's effect
+  common.set(triggerBytes(r2), 10);
+  common.set(triggerBytes(l2), 21);
+  if (!bluetooth) return { id: 0x02, data: common };
+  const data = new Uint8Array(77);
+  data[0] = (seq & 0xf) << 4; data[1] = 0x10;
+  data.set(common, 2);
+  const sum = new Uint8Array(75);
+  sum[0] = 0xa2; sum[1] = 0x31; sum.set(data.subarray(0, 73), 2);
+  const c = crc32(sum);
+  data[73] = c & 0xff; data[74] = (c >>> 8) & 0xff; data[75] = (c >>> 16) & 0xff; data[76] = c >>> 24;
+  return { id: 0x31, data };
+}
+
+/** what the triggers' effects come from, each time they are worked out */
+export interface TriggerInput {
+  /** performance.now() */
+  now: number;
+  /** the game's "drive" status (0: not driving) and whether the page is visible and focused */
+  drive: number; shown: boolean;
+  /** the car's speed (m/s), its engine's rpm and its gear (0 reverse, 1 neutral, 2 first ..); undefined: a game that
+   *  does not say */
+  speed?: number; rpm?: number; gear?: number;
+  /** the triggers, 0..1 */
+  throttle: number; brake: number;
+  /** the game's rumble on the strong motor, 0..1 */
+  hit: number;
+}
+
+/** from a zone on, one strength */
+const from = (zone: number, s: number) => Array.from({ length: 10 }, (_, i) => i >= zone ? s : 0);
+
+/**
+ * The triggers' effects from the car's state, with what has to be remembered between two calls: the gear (a shift's
+ * kick lasts KICK_MS), and the top of this car's revs.  The top is the highest rpm seen; it counts as known once the
+ * engine came down a tenth from it (a shift) or stayed within 1 % of it for LIMIT_MS on the throttle (the limiter), so
+ * the first run up through the revs does not shake all the way.  It is forgotten when the game stops saying the rpm,
+ * and after FORGET_MS without driving (another race, perhaps another car).
+ */
+export class TriggerFeel {
+  private gear = -1;
+  private kickUntil = 0;
+  private top = 0;
+  private topKnown = false;
+  private nearSince = 0;
+  private idleSince = 0;
+
+  effects(i: TriggerInput): { r2: TriggerEffect; l2: TriggerEffect } {
+    const driving = (i.drive & 3) !== 0 && i.shown;
+    if (!driving) {
+      if (!this.idleSince) this.idleSince = i.now;
+      if (i.now - this.idleSince > FORGET_MS || i.rpm === undefined) { this.top = 0; this.topKnown = false; }
+      this.gear = -1; this.kickUntil = 0; this.nearSince = 0;
+      return { r2: TRIGGER_OFF, l2: TRIGGER_OFF };
+    }
+    this.idleSince = 0;
+    const speed = Math.abs(i.speed ?? 0), rpm = i.rpm ?? 0, gear = i.gear ?? -1;
+
+    // a shift between forward gears: the kick
+    if (this.gear >= 2 && gear >= 2 && gear !== this.gear) this.kickUntil = i.now + KICK_MS;
+    this.gear = gear;
+
+    // the top of the revs
+    if (rpm > this.top) { this.top = rpm; this.nearSince = i.now; }
+    if (this.top >= MIN_TOP) {
+      if (rpm < this.top * 0.9) this.topKnown = true;
+      if (rpm >= this.top * 0.99 && i.throttle > 0.5) {
+        if (!this.nearSince) this.nearSince = i.now;
+        if (i.now - this.nearSince >= LIMIT_MS) this.topKnown = true;
+      } else this.nearSince = 0;
+    }
+    const atTop = this.topKnown && rpm >= this.top * 0.97;
+    // off the line: first gear, slow, the engine high in its revs
+    const spin = gear === 2 && speed < 9 && this.top >= MIN_TOP && rpm > this.top * 0.8 && i.throttle > 0.7;
+
+    let r2: TriggerEffect, l2: TriggerEffect;
+    if (i.hit > 0.45) {
+      const s = i.hit > 0.8 ? 8 : 6;
+      return { r2: { kind: 'shake', hz: 22, zones: from(0, s) }, l2: { kind: 'shake', hz: 22, zones: from(0, s) } };
+    }
+    if (i.now < this.kickUntil) r2 = { kind: 'push', zones: from(1, 8) };
+    else if (atTop && i.throttle > 0.3) r2 = { kind: 'shake', hz: 38, zones: from(3, 4) };
+    else if (spin) r2 = { kind: 'shake', hz: 55, zones: from(4, 3) };
+    else r2 = { kind: 'push', zones: from(2, 2) };
+
+    // the brake: stiffer the faster the car goes (strength 2 standing, 7 from 55 m/s, about 200 km/h)
+    const firm = 2 + Math.round(5 * Math.min(1, speed / 55));
+    if (i.brake > 0.85 && speed > 14 && gear !== 0) l2 = { kind: 'shake', hz: 14, zones: from(5, Math.min(8, firm + 1)) };
+    else l2 = { kind: 'push', zones: from(1, gear === 0 ? 2 : firm) };
+    return { r2, l2 };
+  }
+}
+/** a shift's kick, the limiter's wait, how long a car's top revs are kept while not driving (ms); the least rpm that
+ *  counts as a top (an engine that never left idle has none) */
+const KICK_MS = 110, LIMIT_MS = 400, FORGET_MS = 20000, MIN_TOP = 4500;
+
+// ---- the controllers -----------------------------------------------------------------------------------------------
+
+let log: (s: string) => void = () => {};
+
+class Pad {
+  readonly name: string;
+  private bluetooth: boolean;
+  private seq = 0;
+  private sent = '';
+  private sentAt = 0;
+  private queue: Promise<void> = Promise.resolve();
+  private failed = false;
+
+  constructor(readonly dev: HidDevice) {
+    this.name = nameOf(dev) ?? 'DualSense';
+    this.bluetooth = dev.collections.some(c => c.outputReports?.some(r => r.reportId === 0x31));
+  }
+  get transport() { return this.bluetooth ? 'Bluetooth' : 'USB'; }
+
+  /** over Bluetooth the controller's full reports are 0x31 too (a browser that lists no output reports) */
+  onReport = (e: Event) => {
+    if ((e as HidReportEvent).reportId === 0x31 && !this.bluetooth) { this.bluetooth = true; this.sent = ''; }
+  };
+
+  /** the two effects, sent when they change (at most every SEND_MS, but a new one after QUIET_MS at once), and again
+   *  every RESEND_MS: a controller that slept and woke has none */
+  set(r2: TriggerEffect, l2: TriggerEffect, force = false) {
+    if (!this.dev.opened) return;
+    const key = `${triggerBytes(r2).join()}|${triggerBytes(l2).join()}`, now = performance.now(), since = now - this.sentAt;
+    if (!force && (key === this.sent ? since < RESEND_MS : since < SEND_MS)) return;
+    this.sent = key; this.sentAt = now;
+    const { id, data } = triggerReport(r2, l2, this.bluetooth, this.seq = (this.seq + 1) & 0xf);
+    this.queue = this.queue.then(() => this.dev.sendReport(id, data as BufferSource)).catch(err => {
+      if (!this.failed) { this.failed = true; log(`[pad] ${this.name}: its triggers cannot be set: ${(err as Error)?.message ?? err}`); }
+    });
+  }
+
+  close() {
+    this.set(TRIGGER_OFF, TRIGGER_OFF, true);
+    this.dev.removeEventListener('inputreport', this.onReport);
+    this.queue = this.queue.then(() => this.dev.opened ? this.dev.close() : undefined).catch(() => {});
+  }
+}
+/** the least time between two reports while the effects move, and a standing one's repeat (ms) */
+const SEND_MS = 25, RESEND_MS = 2000;
+
+const pads = new Map<HidDevice, Pad>();
+let users = 0;
+
+async function add(dev: HidDevice) {
+  if (!nameOf(dev) || pads.has(dev) || !users) return;
+  const p = new Pad(dev);
+  pads.set(dev, p);
+  try { if (!dev.opened) await dev.open(); }
+  catch (err) {
+    log(`[pad] ${p.name}: cannot open it for its triggers: ${(err as Error)?.message ?? err}`);
+    pads.delete(dev);
+    return;
+  }
+  if (pads.get(dev) !== p) return;
+  dev.addEventListener('inputreport', p.onReport);
+  log(`[pad] ${p.name}: adaptive triggers on (${p.transport})`);
+}
+function remove(dev: HidDevice) {
+  const p = pads.get(dev);
+  if (!p) return;
+  pads.delete(dev);
+  p.close();
+}
+const onHidConnect = (e: Event) => void add((e as HidConnectionEvent).device);
+const onHidDisconnect = (e: Event) => { pads.delete((e as HidConnectionEvent).device); };
+/** the tab closing: the triggers let go (they would keep their last effect until the controller sleeps) */
+const onPageHide = () => { for (const p of pads.values()) p.set(TRIGGER_OFF, TRIGGER_OFF, true); };
+
+/** While the game runs (the PadPoller's, until the function it returns is called): the controllers picked before
+ *  opened, those plugged in or picked later too.  logf: the page's log. */
+export function useDualSense(logf: (s: string) => void): () => void {
+  const h = hid();
+  if (!h) return () => {};
+  log = logf;
+  if (users++ === 0) {
+    h.addEventListener('connect', onHidConnect);
+    h.addEventListener('disconnect', onHidDisconnect);
+    addEventListener('pagehide', onPageHide);
+    h.getDevices().then(ds => { for (const d of ds) void add(d); }, err => log(`[pad] WebHID: ${(err as Error)?.message ?? err}`));
+  }
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    if (--users > 0) return;
+    h.removeEventListener('connect', onHidConnect);
+    h.removeEventListener('disconnect', onHidDisconnect);
+    removeEventListener('pagehide', onPageHide);
+    for (const d of [...pads.keys()]) remove(d);
+  };
+}
+
+/** whether any is open (the poller reads the game's status only then) */
+export const dualSenseOpen = () => pads.size > 0;
+
+/** both triggers' effects onto every controller open */
+export function setTriggers(r2: TriggerEffect, l2: TriggerEffect) {
+  for (const p of pads.values()) p.set(r2, l2);
+}
+
+/**
+ * The poller's share: every time the controller is read, the effects for the car's state onto the DualSenses open,
+ * while one of them drives the game's pad (else they are let go).  status: the game's status table (null: not there
+ * yet, or being written: the last one read stays).
+ */
+export class TriggerDriver {
+  private feel = new TriggerFeel();
+  private last: ReadonlyMap<string, number> | null = null;
+  private readAt = 0;
+
+  constructor(private status: () => ReadonlyMap<string, number> | null) {}
+
+  update(driverId: string | null, s: PadSnapshot, hit: number) {
+    if (!pads.size) return;
+    const now = performance.now();
+    if (now - this.readAt >= STATUS_MS) { this.readAt = now; this.last = this.status() ?? this.last; }
+    const st = this.last;
+    const shown = typeof document === 'undefined' || (document.visibilityState === 'visible' && document.hasFocus());
+    const mine = !!driverId && isDualSense(driverId);
+    const { r2, l2 } = this.feel.effects({
+      now, drive: mine ? st?.get('drive') ?? 0 : 0, shown,
+      speed: st?.get('car_speed'), rpm: st?.get('car_rpm'), gear: st?.get('car_gear'),
+      throttle: s.axes[PAD_AXIS_RT] ?? 0, brake: s.axes[PAD_AXIS_LT] ?? 0, hit,
+    });
+    setTriggers(r2, l2);
+  }
+
+  /** the game ended: the triggers let go */
+  stop() { for (const p of pads.values()) p.set(TRIGGER_OFF, TRIGGER_OFF, true); }
+}
+/** how often the game's status is read for the triggers (ms) */
+const STATUS_MS = 15;
+
+/** whether this browser can set them (WebHID: Chrome, Edge and Opera on a computer) */
+export const dualSensePossible = () => !!hid();
+
+const FILTERS = Object.keys(DUALSENSE_PRODUCTS).map(p => ({ vendorId: SONY, productId: +p }));
+
+/** The browser's list of these controllers to pick from (only from a click: Chrome asks for one).  The one picked
+ *  works at once while a game runs, else from the next Play, and on later visits without asking.  Resolves to the
+ *  names of those picked (none: the list closed). */
+export async function connectDualSense(): Promise<string[]> {
+  const h = hid();
+  if (!h) return [];
+  const got = await h.requestDevice({ filters: FILTERS });
+  for (const d of got) void add(d);
+  return [...new Set(got.map(nameOf).filter((n): n is string => !!n))];
+}
+
+/** the names of these controllers picked in this browser before (they open on Play) */
+export async function dualSensePicked(): Promise<string[]> {
+  const h = hid();
+  if (!h) return [];
+  try { return [...new Set((await h.getDevices()).map(nameOf).filter((n): n is string => !!n))]; }
+  catch { return []; }
+}

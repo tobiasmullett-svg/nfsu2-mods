@@ -272,6 +272,13 @@ The start page shows these keys under **Controls**, and F9, Controls shows them 
     computer.
 - **Rumble:** a controller that can rumble in Chrome (Xbox, DualSense and others) shakes when you crash, scrape a
   wall or land hard. Controls, Controller, Rumble turns it off. Firefox has no rumble.
+- **DualSense triggers:** a PS5 controller's triggers can push back as you drive. In Chrome or Edge on a computer,
+  Controls, Controller, **Connect a DualSense** opens the browser's list: pick the controller once (on its cable or
+  over Bluetooth), and it works from then on. The throttle (R2) has a light spring, kicks when the gearbox shifts and
+  shakes at the top of the revs and when the wheels spin off the line; the brake (L2) gets stiffer the faster you go
+  and judders when you stand on it at speed; both shake in a crash. They follow the game's own layout (R2 throttle,
+  L2 brake), and Rumble off turns them off too. A DualShock 4 has no such triggers: it rumbles only. If Steam is
+  running, its PlayStation controller support can take the triggers over: turn that off for the controller.
 - **Sound** starts with the Play click. If the browser still keeps it off, a note says so, and a click on the game or
   a key press turns it on. A controller button cannot: the browser does not count it.
 - **Firefox and Safari:** Esc leaves full screen at once (they have no keyboard lock); in full screen, pause with P.

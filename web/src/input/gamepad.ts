@@ -32,7 +32,9 @@
 // frame the game polls the pad; this file plays them on the controller's
 // vibrationActuator ("dual-rumble") in short overlapping effects, and lets
 // the motors stop once the levels stop coming (a paused or parked game, a
-// hidden page) or fall to zero.
+// hidden page) or fall to zero.  A DualSense's triggers push back and shake
+// with the car besides (dualsense.ts: through WebHID, once the player picked
+// the controller).
 //
 // The page has a share too (PadPage): Home, or both sticks pressed in, opens
 // its menu, which F9 opens on a keyboard (the game binds neither), and while
@@ -52,6 +54,7 @@ import {
 import { HidPadReader, knownPad, OneS2016Reader, oneS2016Android } from './hidpad';
 import { LocalPadWriter } from './local-pads';
 import { allPads, useSteamPads } from './steampad';
+import { TriggerDriver, useDualSense } from './dualsense';
 export { allPads };
 
 export interface PadSnapshot { connected: boolean; buttons: number; axes: number[]; family: number; name: string; index: number; wheel?: boolean }
@@ -276,6 +279,10 @@ export class PadPoller {
   private rumbleSent = 0;
   private rumbleNow: [number, number] = [0, 0];
   private rumblePad: Gamepad | null = null;
+  private rumbleStrong = 0;                // the strong motor's level as last read (a DualSense's triggers shake with it)
+  // a DualSense's adaptive triggers (dualsense.ts)
+  private triggers: TriggerDriver | null;
+  private dualSense: () => void;
   // the page's share: buttons kept from the game until let go, the left stick's directions; a stick pressed in alone,
   // kept from the game while the other may follow (the menu): its bit and since when, and a tap's until when
   private held = 0;
@@ -328,16 +335,18 @@ export class PadPoller {
   };
 
   /** onPress: a button went down; onUse: that, or a stick or trigger moved a quarter of its range; page: the page's
-   *  menu and dialogs */
+   *  menu and dialogs; status: the game's status table (the car's state, for a DualSense's triggers) */
   constructor(h: Int32Array, u8: Uint8Array, private base: number,
               private onPress: () => void, private log: (s: string) => void, private onUse?: () => void,
-              private page?: PadPage) {
+              private page?: PadPage, status?: () => ReadonlyMap<string, number> | null) {
     this.h = h; this.u8 = u8;
     this.localPads = new LocalPadWriter(u8.buffer, base);
     addEventListener('gamepadconnected', this.onConnect);
     addEventListener('gamepaddisconnected', this.onDisconnect);
     addEventListener(WHEEL_MAP_EVENT, this.onWheelMap);
     this.steam = useSteamPads(log);
+    this.dualSense = useDualSense(log);
+    this.triggers = status ? new TriggerDriver(status) : null;
   }
 
   /** stop for good: listeners removed, the mailbox views dropped */
@@ -346,6 +355,8 @@ export class PadPoller {
     removeEventListener('gamepaddisconnected', this.onDisconnect);
     removeEventListener(WHEEL_MAP_EVENT, this.onWheelMap);
     this.rumble(null);
+    this.triggers?.stop();
+    this.dualSense();
     this.steam();
     this.h = null; this.u8 = null;
     this.localPads = null;
@@ -383,6 +394,7 @@ export class PadPoller {
     }
     const s: PadSnapshot = g ? this.read(g, pads) : { connected: false, buttons: 0, axes: [0, 0, 0, 0, 0, 0], family: PADF_GENERIC, name: '', index: -1 };
     this.rumble(g);
+    this.triggers?.update(g ? g.id : null, s, this.rumbleStrong);
     const pressed = s.buttons & ~this.pressedBefore;
     this.pressedBefore = s.buttons;
     if (pressed) { this.onPress(); this.lastPress = performance.now(); }
@@ -597,6 +609,7 @@ export class PadPoller {
         strong = Atomics.load(h, IM_RUMBLE_STRONG) / 65535; weak = Atomics.load(h, IM_RUMBLE_WEAK) / 65535;
       }
     }
+    this.rumbleStrong = strong;
     const [ps, pw] = this.rumbleNow, playing = ps > 0 || pw > 0;
     if (strong < 0.02 && weak < 0.02) {
       if (playing || (this.rumblePad && this.rumblePad !== g)) {

@@ -1,0 +1,175 @@
+// A DualSense's adaptive triggers (web/src/input/dualsense.ts): the effects as the controller's output report on a
+// cable and over Bluetooth, and what the triggers do with the car's state.
+//   node --test web/test/dualsense.test.mjs
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import zlib from 'node:zlib';
+import { fileURLToPath } from 'node:url';
+import * as esbuild from 'esbuild';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const load = async (f) => import('data:text/javascript;base64,' + Buffer.from((await esbuild.build({
+  entryPoints: [path.join(ROOT, f)], bundle: true, format: 'esm', write: false })).outputFiles[0].text).toString('base64'));
+const D = await load('web/src/input/dualsense.ts');
+const zones = (from, s) => Array.from({ length: 10 }, (_, i) => i >= from ? s : 0);
+
+test('which controllers have adaptive triggers, by Chrome\'s Gamepad.id', () => {
+  assert.equal(D.isDualSense('DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)'), true);
+  assert.equal(D.isDualSense('DualSense Edge Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0df2)'), true);
+  assert.equal(D.isDualSense('Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 09cc)'), false);   // a DualShock 4
+  assert.equal(D.isDualSense('Xbox 360 Controller (XInput STANDARD GAMEPAD)'), false);
+});
+
+test('an effect as the report\'s 11 bytes: zones under a mask, 3 bits of strength each', () => {
+  assert.deepEqual([...D.triggerBytes(D.TRIGGER_OFF)], [0x05, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  // strength 8 from zone 0: every zone in use, every strength 7
+  assert.deepEqual([...D.triggerBytes({ kind: 'push', zones: zones(0, 8) })], [0x21, 0xff, 0x03, 0xff, 0xff, 0xff, 0x3f, 0, 0, 0, 0]);
+  // strength 1 from zone 9: the last zone alone, its strength 0
+  assert.deepEqual([...D.triggerBytes({ kind: 'push', zones: zones(9, 1) })], [0x21, 0x00, 0x02, 0, 0, 0, 0, 0, 0, 0, 0]);
+  // strength 3 (2 in the report) on zones 2 and up
+  const b = D.triggerBytes({ kind: 'push', zones: zones(2, 3) });
+  let force = 0;
+  for (let i = 2; i < 10; i++) force += 2 * 2 ** (3 * i);
+  assert.deepEqual([...b.slice(0, 7)], [0x21, 0xfc, 0x03, force & 0xff, (force >>> 8) & 0xff, (force >>> 16) & 0xff, (force >>> 24) & 0xff]);
+  // a shake: the same zones, the frequency its ninth parameter
+  const s = D.triggerBytes({ kind: 'shake', hz: 38, zones: zones(3, 4) });
+  assert.equal(s[0], 0x26); assert.equal(s[1], 0xf8); assert.equal(s[2], 0x03); assert.equal(s[9], 38);
+  // nothing in any zone lets the trigger go
+  assert.deepEqual([...D.triggerBytes({ kind: 'push', zones: zones(0, 0) })], [0x05, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+});
+
+test('the report on a cable: 0x02, the triggers\' two bits alone, R2 at 10 and L2 at 21', () => {
+  const r2 = { kind: 'push', zones: zones(2, 2) }, l2 = { kind: 'shake', hz: 14, zones: zones(5, 6) };
+  const { id, data } = D.triggerReport(r2, l2, false);
+  assert.equal(id, 0x02); assert.equal(data.length, 47);
+  assert.equal(data[0], 0x0c); assert.equal(data[1], 0);          // not the motors, not the lights
+  assert.deepEqual([...data.slice(10, 21)], [...D.triggerBytes(r2)]);
+  assert.deepEqual([...data.slice(21, 32)], [...D.triggerBytes(l2)]);
+  assert.ok([...data.slice(2, 10), ...data.slice(32)].every(v => v === 0));
+});
+
+test('the report over Bluetooth: 0x31, a sequence and a tag, the same 47 bytes, a CRC-32 at the end', () => {
+  const r2 = { kind: 'push', zones: zones(1, 8) }, l2 = D.TRIGGER_OFF;
+  const usb = D.triggerReport(r2, l2, false).data;
+  const { id, data } = D.triggerReport(r2, l2, true, 5);
+  assert.equal(id, 0x31); assert.equal(data.length, 77);
+  assert.equal(data[0], 0x50); assert.equal(data[1], 0x10);
+  assert.deepEqual([...data.slice(2, 49)], [...usb]);
+  const want = zlib.crc32(Buffer.concat([Buffer.from([0xa2, 0x31]), Buffer.from(data.slice(0, 73))]));
+  assert.equal(new DataView(data.buffer).getUint32(73, true), want);
+  assert.equal(D.crc32(new TextEncoder().encode('123456789')), 0xcbf43926);
+});
+
+const base = { drive: 1, shown: true, speed: 0, rpm: 900, gear: 2, throttle: 0, brake: 0, hit: 0 };
+
+test('not driving, or the page hidden: both triggers let go', () => {
+  const f = new D.TriggerFeel();
+  assert.deepEqual(f.effects({ ...base, now: 0, drive: 0 }), { r2: D.TRIGGER_OFF, l2: D.TRIGGER_OFF });
+  assert.deepEqual(f.effects({ ...base, now: 10, shown: false }), { r2: D.TRIGGER_OFF, l2: D.TRIGGER_OFF });
+});
+
+test('driving: a light spring on the throttle, a brake that stiffens with the speed', () => {
+  const f = new D.TriggerFeel();
+  const slow = f.effects({ ...base, now: 0 });
+  assert.deepEqual(slow.r2, { kind: 'push', zones: zones(2, 2) });
+  assert.deepEqual(slow.l2, { kind: 'push', zones: zones(1, 2) });
+  const fast = f.effects({ ...base, now: 20, speed: 60, gear: 5, rpm: 5000 });
+  assert.deepEqual(fast.l2, { kind: 'push', zones: zones(1, 7) });
+  // a game that says only "drive": the springs alone
+  const old = new D.TriggerFeel().effects({ now: 0, drive: 2, shown: true, throttle: 1, brake: 1, hit: 0 });
+  assert.deepEqual(old, { r2: { kind: 'push', zones: zones(2, 2) }, l2: { kind: 'push', zones: zones(1, 2) } });
+});
+
+test('the brake held down hard at speed judders; not while reversing', () => {
+  const f = new D.TriggerFeel();
+  const e = f.effects({ ...base, now: 0, speed: 40, gear: 4, rpm: 5000, brake: 1 });
+  assert.equal(e.l2.kind, 'shake');
+  assert.equal(f.effects({ ...base, now: 20, speed: 40, gear: 4, rpm: 5000, brake: 0.5 }).l2.kind, 'push');
+  assert.equal(f.effects({ ...base, now: 40, speed: 20, gear: 0, rpm: 5000, brake: 1 }).l2.kind, 'push');
+});
+
+test('a shift between forward gears kicks the throttle for a moment', () => {
+  const f = new D.TriggerFeel();
+  f.effects({ ...base, now: 0, speed: 20, gear: 2, rpm: 6000, throttle: 1 });
+  const kick = f.effects({ ...base, now: 16, speed: 20, gear: 3, rpm: 4500, throttle: 1 });
+  assert.deepEqual(kick.r2, { kind: 'push', zones: zones(1, 8) });
+  const after = f.effects({ ...base, now: 200, speed: 21, gear: 3, rpm: 4600, throttle: 1 });
+  assert.deepEqual(after.r2, { kind: 'push', zones: zones(2, 2) });
+  // into first from neutral (the start) is none
+  const g = new D.TriggerFeel();
+  g.effects({ ...base, now: 0, gear: 1 });
+  assert.deepEqual(g.effects({ ...base, now: 16, gear: 2 }).r2, { kind: 'push', zones: zones(2, 2) });
+});
+
+test('the top of the revs shakes the throttle, once the engine has shown where it is', () => {
+  const f = new D.TriggerFeel();
+  let now = 0;
+  // the first run up through the revs: no shake on the way
+  for (let rpm = 1000; rpm <= 8000; rpm += 250) {
+    const e = f.effects({ ...base, now: now += 16, speed: 30, gear: 3, rpm, throttle: 1 });
+    assert.equal(e.r2.kind, 'push', `at ${rpm} rpm`);
+  }
+  // the shift: the revs fall, the top is known
+  f.effects({ ...base, now: now += 16, speed: 31, gear: 4, rpm: 5500, throttle: 1 });
+  now += 300;
+  assert.equal(f.effects({ ...base, now: now += 16, speed: 40, gear: 4, rpm: 7000, throttle: 1 }).r2.kind, 'push');
+  const top = f.effects({ ...base, now: now += 16, speed: 45, gear: 4, rpm: 7900, throttle: 1 });
+  assert.deepEqual(top.r2, { kind: 'shake', hz: 38, zones: zones(3, 4) });
+  // off the throttle up there: the spring
+  assert.equal(f.effects({ ...base, now: now += 16, speed: 45, gear: 4, rpm: 7900, throttle: 0 }).r2.kind, 'push');
+
+  // held on the limiter without a shift: known after a moment
+  const g = new D.TriggerFeel();
+  now = 0;
+  for (let rpm = 1000; rpm <= 8000; rpm += 500) g.effects({ ...base, now: now += 16, speed: 30, gear: 3, rpm, throttle: 1 });
+  assert.equal(g.effects({ ...base, now: now += 100, speed: 30, gear: 3, rpm: 8000, throttle: 1 }).r2.kind, 'push');
+  assert.equal(g.effects({ ...base, now: now += 400, speed: 30, gear: 3, rpm: 8000, throttle: 1 }).r2.kind, 'shake');
+});
+
+test('a crash shakes both', () => {
+  const f = new D.TriggerFeel();
+  const e = f.effects({ ...base, now: 0, speed: 30, gear: 3, rpm: 5000, hit: 0.9 });
+  assert.deepEqual(e.r2, { kind: 'shake', hz: 22, zones: zones(0, 8) });
+  assert.deepEqual(e.l2, e.r2);
+});
+
+test('a controller picked before opens while the game runs, takes the effects when they change, and is let go at the end', async () => {
+  const sent = [];
+  const dev = Object.assign(new EventTarget(), {
+    opened: false, vendorId: 0x054c, productId: 0x0ce6, productName: 'DualSense Wireless Controller',
+    collections: [{ outputReports: [{ reportId: 0x31 }] }],                       // Bluetooth's
+    async open() { this.opened = true; }, async close() { this.opened = false; },
+    async sendReport(id, data) { sent.push({ id, data: Uint8Array.from(data) }); },
+  });
+  const hid = Object.assign(new EventTarget(), { getDevices: async () => [dev], requestDevice: async () => [dev] });
+  Object.defineProperty(globalThis.navigator, 'hid', { value: hid, configurable: true });
+  globalThis.addEventListener ??= () => {}; globalThis.removeEventListener ??= () => {};
+  const tick = () => new Promise(r => setTimeout(r, 5));
+  try {
+    assert.deepEqual(await D.dualSensePicked(), ['DualSense']);
+    const lines = [], done = D.useDualSense(s => lines.push(s));
+    await tick();
+    assert.equal(dev.opened, true); assert.equal(D.dualSenseOpen(), true);
+    assert.match(lines.join('\n'), /adaptive triggers on \(Bluetooth\)/);
+    const status = new Map([['drive', 1], ['car_speed', 60], ['car_rpm', 5000], ['car_gear', 5]]);
+    const t = new D.TriggerDriver(() => status);
+    const pad = { connected: true, buttons: 0, axes: [0, 0, 0, 0, 0, 0], family: 2, name: 'DualSense', index: 0 };
+    const id = 'DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)';
+    t.update(id, pad, 0); t.update(id, pad, 0);
+    await tick();
+    assert.equal(sent.length, 1);                                               // the same effects: once
+    assert.equal(sent[0].id, 0x31);
+    assert.deepEqual([...sent[0].data.slice(2 + 21, 2 + 32)], [...D.triggerBytes({ kind: 'push', zones: zones(1, 7) })]);
+    // another controller drives the game's pad: this one's triggers are let go
+    await new Promise(r => setTimeout(r, 40));
+    t.update('Xbox 360 Controller (XInput STANDARD GAMEPAD)', pad, 0);
+    await tick();
+    assert.equal(sent.length, 2); assert.equal(sent[1].data[2 + 10], 0x05); assert.equal(sent[1].data[2 + 21], 0x05);
+    t.update(id, pad, 0);
+    done();
+    await tick();
+    assert.equal(sent.at(-1).data[2 + 10], 0x05);
+    assert.equal(dev.opened, false); assert.equal(D.dualSenseOpen(), false);
+  } finally { delete globalThis.navigator.hid; }
+});
