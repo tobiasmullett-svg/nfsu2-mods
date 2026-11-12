@@ -112,6 +112,8 @@ export const MENU_SIZE = 'nfsu2-menu-size';
 export const WHEEL = 'nfsu2.wheel.';
 /** + a wheel model: the player's pick for its shifter */
 export const SHIFTER = 'nfsu2.shifter.';
+/** how strong a DualSense's triggers and road rumble are: 'light', 'medium' or 'strong' (dualsense.ts) */
+export const DUALSENSE_STRENGTH = 'nfsu2.dualsense.strength';
 /** '1': this browser sends AltGr as Left Ctrl and Right Alt (altgr.ts) */
 export const ALTGR_CTRL = 'nfsu2.altgr-ctrl';
 

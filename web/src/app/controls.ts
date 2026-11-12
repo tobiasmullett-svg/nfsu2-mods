@@ -14,7 +14,7 @@
 
 import { allPads, drivingPad, familyOf, PAD_DRIVER_EVENT } from '../input/gamepad';
 import { connectSteamPad, steamPadsPicked, steamPadsPossible } from '../input/steampad';
-import { connectDualSense, dualSensePicked, dualSensePossible } from '../input/dualsense';
+import { connectDualSense, dualSensePicked, dualSensePossible, setTriggerStrength, triggerStrength, type Strength } from '../input/dualsense';
 import { PADF_PLAYSTATION } from '../input/proto';
 import { wheelSection } from './wheel-setup';
 import { askMotion, levelHorizon, menuSize, nitroSteerSide, onSteering, setSteering, steering, STEERING, steeringName, touchPosition,
@@ -197,11 +197,17 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
       <label class="opt"><input type="radio" name="${id}-fam" value="ps">PlayStation</label>
     </div>
     ${steamPadsPossible() ? '<p class="hint steam-state"></p><div class="row"><button type="button" class="btn" data-steam></button></div>' : ''}
-    ${dualSensePossible() ? '<p class="hint ds-state"></p><div class="row"><button type="button" class="btn" data-ds></button></div>' : ''}
+    ${dualSensePossible() ? `<p class="hint ds-state"></p><div class="row"><button type="button" class="btn" data-ds></button></div>
+    <p class="hint">${esc(t('Trigger strength'))}</p>
+    <div class="seg" role="radiogroup" aria-label="${esc(t('Trigger strength'))}">
+      <label class="opt"><input type="radio" name="${id}-dss" value="light">${esc(t('Light'))}</label>
+      <label class="opt"><input type="radio" name="${id}-dss" value="medium">${esc(t('Medium'))}</label>
+      <label class="opt"><input type="radio" name="${id}-dss" value="strong">${esc(t('Strong'))}</label>
+    </div>` : ''}
     </div>`;
     pad.append(wheel.box, ...kept);
     svg = pad.querySelector('svg')!;
-    radios = [...pad.querySelectorAll<HTMLInputElement>('.pad-foot input[type="radio"]')];
+    radios = [...pad.querySelectorAll<HTMLInputElement>(`.pad-foot input[name="${id}-fam"]`)];
     for (const r of radios) r.onchange = () => { if (r.checked) sheet.family(r.value as Family); };
     steamPart();
     dualSensePart();
@@ -236,6 +242,11 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
     show([]);
     void dualSensePicked().then(show);
     btn.onclick = () => connectDualSense().then(() => dualSensePicked()).then(show, () => {});
+    // how strong the triggers and the road's rumble are: taken at once, in a running game too
+    for (const r of pad.querySelectorAll<HTMLInputElement>(`.pad-foot input[name="${id}-dss"]`)) {
+      r.checked = r.value === triggerStrength();
+      r.onchange = () => { if (r.checked) setTriggerStrength(r.value as Strength); };
+    }
   };
   /** a label too long for the drawing (another language's words) a little smaller, so it stays inside the 336 px;
    *  measured once the tab shows (a hidden one has no size).  Measured again after each change: a renderer that draws

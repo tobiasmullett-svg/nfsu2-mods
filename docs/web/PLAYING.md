@@ -274,9 +274,11 @@ The start page shows these keys under **Controls**, and F9, Controls shows them 
   wall or land hard. Controls, Controller, Rumble turns it off. Firefox has no rumble.
 - **DualSense triggers:** a PS5 controller's triggers can push back as you drive. In Chrome or Edge on a computer,
   Controls, Controller, **Connect a DualSense** opens the browser's list: pick the controller once (on its cable or
-  over Bluetooth), and it works from then on. The throttle (R2) has a light spring, kicks when the gearbox shifts and
-  shakes at the top of the revs and when the wheels spin off the line; the brake (L2) gets stiffer the faster you go
-  and judders when you stand on it at speed; both shake in a crash. They follow the game's own layout (R2 throttle,
+  over Bluetooth), and it works from then on. The throttle (R2) has a light spring on the way down and, held down,
+  hums with the engine: faster and stronger as the revs climb. It kicks when the gearbox shifts and shakes at the top
+  of the revs and when the wheels spin off the line; the brake (L2) gets stiffer the faster you go and judders when
+  you stand on it at speed; both shake in a crash. The controller also rumbles under hard braking and in fast
+  corners. **Trigger strength** under the button sets how strong all of this is: Light, Medium or Strong. They follow the game's own layout (R2 throttle,
   L2 brake), and Rumble off turns them off too. Once connected this way, the controller's rumble comes from the page
   too, with the triggers (Chrome's own stays silent on some DualSenses). A DualShock 4 has no such triggers: it rumbles only. If Steam is
   running, its PlayStation controller support can take the triggers over: turn that off for the controller.

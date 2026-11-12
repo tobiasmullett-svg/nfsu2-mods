@@ -17,16 +17,23 @@
 //
 // What the triggers do (triggerEffects) comes from the game's status table (runtime/web/status_web.c: "drive",
 // "car_speed", "car_rpm", "car_gear"), the game's rumble levels and the triggers' own positions:
-//   R2, the throttle  a light spring; a kick when the gearbox shifts; a fine shake while the engine sits at the top
-//                     of its revs (the highest it has reached in this car, once it has come down from there: the
-//                     limiter, or an automatic's shift point), and while the wheels spin off the line
-//   L2, the brake     a spring that stiffens with the car's speed; a slow judder while it is held down hard at speed
+//   R2, the throttle  a light spring on the way down; held down, the engine's hum instead (faster and stronger as the
+//                     revs climb, so a gear is felt running out); a kick when the gearbox shifts; a fine shake while
+//                     the engine sits at the top of its revs (the highest it has reached in this car, once it has
+//                     come down from there: the limiter, or an automatic's shift point), and while the wheels spin
+//                     off the line
+//   L2, the brake     a spring that stiffens with the car's speed; a judder while it is held down hard at speed,
+//                     slower as the car slows
 //   both              a shake with a crash (the game's strong rumble)
+// The motors add the road to the game's rumble (roadRumble): the tyres under hard braking and in a fast corner, from
+// the brake, the stick and the car's speed (the game's status has no word for the tyres' slip).
+// How strong all of it is, is the player's (the Controls sheet: Light, Medium, Strong).
 // A game built before those status words has only "drive": the springs alone.  Outside driving (menus, the pause, a
 // hidden or unfocused page, the game's end) both triggers are let go.
 
+import { DUALSENSE_STRENGTH, localStore } from '../app/prefs';
 import type { PadSnapshot } from './gamepad';
-import { PAD_AXIS_LT, PAD_AXIS_RT } from './proto';
+import { PAD_AXIS_LT, PAD_AXIS_LX, PAD_AXIS_RT } from './proto';
 
 /** a WebHID device, as much of it as this file uses (TypeScript's DOM types have none) */
 interface HidDevice extends EventTarget {
@@ -134,10 +141,27 @@ export interface TriggerInput {
   throttle: number; brake: number;
   /** the game's rumble on the strong motor, 0..1 */
   hit: number;
+  /** how strong the effects are, 0..1 (STRENGTHS; undefined: 1) */
+  scale?: number;
 }
+
+/** how strong the triggers and the road's rumble are: the player's pick, and each one's share of the full strength */
+export type Strength = 'light' | 'medium' | 'strong';
+export const STRENGTHS: Readonly<Record<Strength, number>> = { light: 0.45, medium: 0.7, strong: 1 };
+let strength: Strength | null = null;
+export function triggerStrength(): Strength {
+  if (!strength) { const v = localStore.get(DUALSENSE_STRENGTH); strength = v === 'light' || v === 'medium' ? v : 'strong'; }
+  return strength;
+}
+export function setTriggerStrength(v: Strength) { strength = v; localStore.set(DUALSENSE_STRENGTH, v); }
 
 /** from a zone on, one strength */
 const from = (zone: number, s: number) => Array.from({ length: 10 }, (_, i) => i >= zone ? s : 0);
+/** an effect at a share of its strength (never below 1: the effect stays) */
+function scaled(e: TriggerEffect, k: number): TriggerEffect {
+  if (e.kind === 'off' || k >= 1) return e;
+  return { ...e, zones: e.zones.map(s => s ? Math.max(1, Math.round(s * k)) : 0) };
+}
 
 /**
  * The triggers' effects from the car's state, with what has to be remembered between two calls: the gear (a shift's
@@ -153,13 +177,19 @@ export class TriggerFeel {
   private topKnown = false;
   private nearSince = 0;
   private idleSince = 0;
+  private held = false;
 
   effects(i: TriggerInput): { r2: TriggerEffect; l2: TriggerEffect } {
+    const { r2, l2 } = this.full(i), k = i.scale ?? 1;
+    return { r2: scaled(r2, k), l2: scaled(l2, k) };
+  }
+
+  private full(i: TriggerInput): { r2: TriggerEffect; l2: TriggerEffect } {
     const driving = (i.drive & 3) !== 0 && i.shown;
     if (!driving) {
       if (!this.idleSince) this.idleSince = i.now;
       if (i.now - this.idleSince > FORGET_MS || i.rpm === undefined) { this.top = 0; this.topKnown = false; }
-      this.gear = -1; this.kickUntil = 0; this.nearSince = 0;
+      this.gear = -1; this.kickUntil = 0; this.nearSince = 0; this.held = false;
       return { r2: TRIGGER_OFF, l2: TRIGGER_OFF };
     }
     this.idleSince = 0;
@@ -190,11 +220,21 @@ export class TriggerFeel {
     if (i.now < this.kickUntil) r2 = { kind: 'push', zones: from(1, 8) };
     else if (atTop && i.throttle > 0.3) r2 = { kind: 'shake', hz: 38, zones: from(3, 4) };
     else if (spin) r2 = { kind: 'shake', hz: 55, zones: from(4, 3) };
-    else r2 = { kind: 'push', zones: from(2, 2) };
+    else {
+      // held down (from HELD_ON of its travel, until back at HELD_OFF), in a forward gear: the engine's hum in place
+      // of the spring, HUM_HZ[0] at idle to HUM_HZ[1] at the top of the revs, strength 1 to 3
+      this.held = i.throttle >= (this.held ? HELD_OFF : HELD_ON);
+      if (this.held && i.rpm !== undefined && gear >= 2) {
+        const f = Math.max(0, Math.min(1, rpm / Math.max(this.top, MIN_TOP)));
+        r2 = { kind: 'shake', hz: HUM_HZ[0] + (HUM_HZ[1] - HUM_HZ[0]) * f, zones: from(4, 1 + Math.round(2 * f * f)) };
+      } else r2 = { kind: 'push', zones: from(2, 2) };
+    }
 
-    // the brake: stiffer the faster the car goes (strength 2 standing, 7 from 55 m/s, about 200 km/h)
+    // the brake: stiffer the faster the car goes (strength 2 standing, 7 from 55 m/s, about 200 km/h); held hard at
+    // speed, a judder, 24 Hz at 55 m/s down to 10 as the car slows
     const firm = 2 + Math.round(5 * Math.min(1, speed / 55));
-    if (i.brake > 0.85 && speed > 14 && gear !== 0) l2 = { kind: 'shake', hz: 14, zones: from(5, Math.min(8, firm + 1)) };
+    if (i.brake > 0.75 && speed > 14 && gear !== 0)
+      l2 = { kind: 'shake', hz: 10 + 14 * Math.min(1, speed / 55), zones: from(5, Math.min(8, firm + 1)) };
     else l2 = { kind: 'push', zones: from(1, gear === 0 ? 2 : firm) };
     return { r2, l2 };
   }
@@ -202,6 +242,44 @@ export class TriggerFeel {
 /** a shift's kick, the limiter's wait, how long a car's top revs are kept while not driving (ms); the least rpm that
  *  counts as a top (an engine that never left idle has none) */
 const KICK_MS = 110, LIMIT_MS = 400, FORGET_MS = 20000, MIN_TOP = 4500;
+/** the throttle counts as held down from HELD_ON of its travel until it is back at HELD_OFF; the hum's frequency at
+ *  idle and at the top of the revs (Hz) */
+const HELD_ON = 0.6, HELD_OFF = 0.45, HUM_HZ = [16, 46] as const;
+
+/** what the road's rumble comes from */
+export interface RoadInput {
+  /** whether this controller drives a car on a page that shows */
+  driving: boolean;
+  /** the car's speed (m/s) and its gear (0 reverse); undefined: a game that does not say */
+  speed?: number; gear?: number;
+  /** the brake, 0..1, and the steering, -1..1 */
+  brake: number; steer: number;
+  /** how strong, 0..1 (STRENGTHS; undefined: 1) */
+  scale?: number;
+}
+/**
+ * The road on the motors, beside the game's own rumble (which says a surface's change and a hit, little else): the
+ * tyres under hard braking (the brake past 0.6 above 12 m/s, growing to 55 m/s; the big motor joins past 0.9 above
+ * 25 m/s) and in a fast corner (the stick past half its way above 18 m/s, growing to 55 m/s; the big motor joins on
+ * the hardest).  From the controller and the car's speed: the game's status has no word for the tyres' slip.
+ */
+export function roadRumble(i: RoadInput): Rumble {
+  const speed = Math.abs(i.speed ?? 0);
+  if (!i.driving || i.speed === undefined || i.gear === 0) return { strong: 0, weak: 0 };
+  let strong = 0, weak = 0;
+  const b = Math.max(0, Math.min(1, (i.brake - 0.6) / 0.4)), bv = Math.max(0, Math.min(1, (speed - 12) / 43));
+  if (b > 0 && speed > 12) {
+    weak = b * (0.15 + 0.35 * bv);
+    if (i.brake > 0.9 && speed > 25) strong = 0.12 + 0.18 * bv;
+  }
+  const c = Math.max(0, Math.min(1, (Math.abs(i.steer) - 0.5) / 0.5)) * Math.max(0, Math.min(1, (speed - 18) / 37));
+  if (c > 0) {
+    weak = Math.max(weak, 0.1 + 0.3 * c);
+    if (c > 0.7) strong = Math.max(strong, 0.15 * c);
+  }
+  const k = i.scale ?? 1;
+  return { strong: strong * k, weak: weak * k };
+}
 
 // ---- the controllers -----------------------------------------------------------------------------------------------
 
@@ -217,6 +295,8 @@ class Pad {
   private failed = false;
   /** the game's rumble, which this controller plays from the report too (the page's own, not the browser's) */
   rumble: Rumble = { strong: 0, weak: 0 };
+  /** the road's rumble (roadRumble), played with the game's: the stronger of the two on each motor */
+  road: Rumble = { strong: 0, weak: 0 };
 
   constructor(readonly dev: HidDevice) {
     this.name = nameOf(dev) ?? 'DualSense';
@@ -233,17 +313,18 @@ class Pad {
    *  every RESEND_MS: a controller that slept and woke has none */
   set(r2: TriggerEffect, l2: TriggerEffect, force = false) {
     if (!this.dev.opened) return;
-    const key = `${triggerBytes(r2).join()}|${triggerBytes(l2).join()}|${level(this.rumble.strong)},${level(this.rumble.weak)}`, now = performance.now(), since = now - this.sentAt;
+    const rumble = { strong: Math.max(this.rumble.strong, this.road.strong), weak: Math.max(this.rumble.weak, this.road.weak) };
+    const key = `${triggerBytes(r2).join()}|${triggerBytes(l2).join()}|${level(rumble.strong)},${level(rumble.weak)}`, now = performance.now(), since = now - this.sentAt;
     if (!force && (key === this.sent ? since < RESEND_MS : since < SEND_MS)) return;
     this.sent = key; this.sentAt = now;
-    const { id, data } = triggerReport(r2, l2, this.bluetooth, this.seq = (this.seq + 1) & 0xf, this.rumble);
+    const { id, data } = triggerReport(r2, l2, this.bluetooth, this.seq = (this.seq + 1) & 0xf, rumble);
     this.queue = this.queue.then(() => this.dev.sendReport(id, data as BufferSource)).catch(err => {
       if (!this.failed) { this.failed = true; log(`[pad] ${this.name}: its triggers cannot be set: ${(err as Error)?.message ?? err}`); }
     });
   }
 
   /** the triggers let go and the motors still */
-  quiet() { this.rumble = { strong: 0, weak: 0 }; this.set(TRIGGER_OFF, TRIGGER_OFF, true); }
+  quiet() { this.rumble = { strong: 0, weak: 0 }; this.road = { strong: 0, weak: 0 }; this.set(TRIGGER_OFF, TRIGGER_OFF, true); }
 
   close() {
     this.quiet();
@@ -340,11 +421,14 @@ export class TriggerDriver {
     const st = this.last;
     const shown = typeof document === 'undefined' || (document.visibilityState === 'visible' && document.hasFocus());
     const mine = !!driverId && isDualSense(driverId);
+    const drive = mine ? st?.get('drive') ?? 0 : 0, scale = STRENGTHS[triggerStrength()];
+    const speed = st?.get('car_speed'), gear = st?.get('car_gear'), brake = s.axes[PAD_AXIS_LT] ?? 0;
     const { r2, l2 } = this.feel.effects({
-      now, drive: mine ? st?.get('drive') ?? 0 : 0, shown,
-      speed: st?.get('car_speed'), rpm: st?.get('car_rpm'), gear: st?.get('car_gear'),
-      throttle: s.axes[PAD_AXIS_RT] ?? 0, brake: s.axes[PAD_AXIS_LT] ?? 0, hit,
+      now, drive, shown, speed, rpm: st?.get('car_rpm'), gear,
+      throttle: s.axes[PAD_AXIS_RT] ?? 0, brake, hit, scale,
     });
+    const road = roadRumble({ driving: (drive & 3) !== 0 && shown, speed, gear, brake, steer: s.axes[PAD_AXIS_LX] ?? 0, scale });
+    for (const p of pads.values()) p.road = road;
     setTriggers(r2, l2);
   }
 

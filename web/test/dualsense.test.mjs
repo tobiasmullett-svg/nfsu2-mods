@@ -94,13 +94,18 @@ test('a shift between forward gears kicks the throttle for a moment', () => {
   f.effects({ ...base, now: 0, speed: 20, gear: 2, rpm: 6000, throttle: 1 });
   const kick = f.effects({ ...base, now: 16, speed: 20, gear: 3, rpm: 4500, throttle: 1 });
   assert.deepEqual(kick.r2, { kind: 'push', zones: zones(1, 8) });
+  // after it, the throttle still down: the engine's hum; let up to a third: the spring
   const after = f.effects({ ...base, now: 200, speed: 21, gear: 3, rpm: 4600, throttle: 1 });
-  assert.deepEqual(after.r2, { kind: 'push', zones: zones(2, 2) });
+  assert.equal(after.r2.kind, 'shake'); assert.deepEqual(after.r2.zones, zones(4, 2));
+  assert.deepEqual(f.effects({ ...base, now: 220, speed: 21, gear: 3, rpm: 4600, throttle: 0.3 }).r2, { kind: 'push', zones: zones(2, 2) });
   // into first from neutral (the start) is none
   const g = new D.TriggerFeel();
   g.effects({ ...base, now: 0, gear: 1 });
   assert.deepEqual(g.effects({ ...base, now: 16, gear: 2 }).r2, { kind: 'push', zones: zones(2, 2) });
 });
+
+/** the limiter's shake (from the fourth tenth of the travel, strength 4), not the hum (from the fifth) */
+const atTop = (e) => e.kind === 'shake' && e.zones[3] === 4;
 
 test('the top of the revs shakes the throttle, once the engine has shown where it is', () => {
   const f = new D.TriggerFeel();
@@ -108,12 +113,12 @@ test('the top of the revs shakes the throttle, once the engine has shown where i
   // the first run up through the revs: no shake on the way
   for (let rpm = 1000; rpm <= 8000; rpm += 250) {
     const e = f.effects({ ...base, now: now += 16, speed: 30, gear: 3, rpm, throttle: 1 });
-    assert.equal(e.r2.kind, 'push', `at ${rpm} rpm`);
+    assert.equal(atTop(e.r2), false, `at ${rpm} rpm`);
   }
   // the shift: the revs fall, the top is known
   f.effects({ ...base, now: now += 16, speed: 31, gear: 4, rpm: 5500, throttle: 1 });
   now += 300;
-  assert.equal(f.effects({ ...base, now: now += 16, speed: 40, gear: 4, rpm: 7000, throttle: 1 }).r2.kind, 'push');
+  assert.equal(atTop(f.effects({ ...base, now: now += 16, speed: 40, gear: 4, rpm: 7000, throttle: 1 }).r2), false);
   const top = f.effects({ ...base, now: now += 16, speed: 45, gear: 4, rpm: 7900, throttle: 1 });
   assert.deepEqual(top.r2, { kind: 'shake', hz: 38, zones: zones(3, 4) });
   // off the throttle up there: the spring
@@ -123,8 +128,8 @@ test('the top of the revs shakes the throttle, once the engine has shown where i
   const g = new D.TriggerFeel();
   now = 0;
   for (let rpm = 1000; rpm <= 8000; rpm += 500) g.effects({ ...base, now: now += 16, speed: 30, gear: 3, rpm, throttle: 1 });
-  assert.equal(g.effects({ ...base, now: now += 100, speed: 30, gear: 3, rpm: 8000, throttle: 1 }).r2.kind, 'push');
-  assert.equal(g.effects({ ...base, now: now += 400, speed: 30, gear: 3, rpm: 8000, throttle: 1 }).r2.kind, 'shake');
+  assert.equal(atTop(g.effects({ ...base, now: now += 100, speed: 30, gear: 3, rpm: 8000, throttle: 1 }).r2), false);
+  assert.equal(atTop(g.effects({ ...base, now: now += 400, speed: 30, gear: 3, rpm: 8000, throttle: 1 }).r2), true);
 });
 
 test('a crash shakes both', () => {
@@ -185,4 +190,59 @@ test('the game\'s rumble rides in the same report: the motors\' two bits and the
   assert.equal(still[0], 0x0f); assert.equal(still[2], 0); assert.equal(still[3], 0);
   const bt = D.triggerReport(D.TRIGGER_OFF, D.TRIGGER_OFF, true, 1, { strong: 0.2, weak: 2 }).data;
   assert.equal(bt[2], 0x0f); assert.equal(bt[4], 255); assert.equal(bt[5], 51);
+});
+
+test('the throttle held down hums with the engine: faster and stronger up the revs, the spring again once let up', () => {
+  const f = new D.TriggerFeel();
+  f.effects({ ...base, now: 0, speed: 30, gear: 3, rpm: 8000, throttle: 0 });            // the top of the revs seen: 8000
+  const low = f.effects({ ...base, now: 16, speed: 10, gear: 3, rpm: 2000, throttle: 1 }).r2;
+  const high = f.effects({ ...base, now: 32, speed: 30, gear: 3, rpm: 7000, throttle: 1 }).r2;
+  assert.equal(low.kind, 'shake'); assert.equal(high.kind, 'shake');
+  assert.deepEqual(low.zones, zones(4, 1)); assert.deepEqual(high.zones, zones(4, 3));
+  assert.ok(low.hz < high.hz && low.hz >= 16 && high.hz <= 46, `${low.hz} ${high.hz}`);
+  // it stays the hum down to 0.45 of the travel, and comes back only from 0.6
+  assert.equal(f.effects({ ...base, now: 48, speed: 30, gear: 3, rpm: 7000, throttle: 0.5 }).r2.kind, 'shake');
+  assert.equal(f.effects({ ...base, now: 64, speed: 30, gear: 3, rpm: 7000, throttle: 0.4 }).r2.kind, 'push');
+  assert.equal(f.effects({ ...base, now: 80, speed: 30, gear: 3, rpm: 7000, throttle: 0.55 }).r2.kind, 'push');
+  // reverse, and a game that does not say the revs: the spring
+  assert.equal(f.effects({ ...base, now: 96, speed: 5, gear: 0, rpm: 3000, throttle: 1 }).r2.kind, 'push');
+  assert.equal(new D.TriggerFeel().effects({ now: 0, drive: 1, shown: true, throttle: 1, brake: 0, hit: 0 }).r2.kind, 'push');
+});
+
+test('the brake\'s judder slows with the car', () => {
+  const f = new D.TriggerFeel();
+  const fast = f.effects({ ...base, now: 0, speed: 55, gear: 5, rpm: 5000, brake: 0.8 }).l2;
+  const slow = f.effects({ ...base, now: 16, speed: 20, gear: 3, rpm: 5000, brake: 0.8 }).l2;
+  assert.equal(fast.kind, 'shake'); assert.equal(fast.hz, 24);
+  assert.equal(slow.kind, 'shake'); assert.ok(slow.hz > 10 && slow.hz < fast.hz);
+});
+
+test('the player\'s strength scales every effect, and none of them away', () => {
+  const at = (scale) => new D.TriggerFeel().effects({ ...base, now: 0, speed: 60, gear: 5, rpm: 5000, brake: 0.5, scale });
+  assert.deepEqual(at(1).l2, { kind: 'push', zones: zones(1, 7) });
+  assert.deepEqual(at(D.STRENGTHS.medium).l2, { kind: 'push', zones: zones(1, 5) });
+  assert.deepEqual(at(D.STRENGTHS.light).l2, { kind: 'push', zones: zones(1, 3) });
+  assert.deepEqual(at(D.STRENGTHS.light).r2, { kind: 'push', zones: zones(2, 1) });
+  assert.equal(D.triggerStrength(), 'strong');
+  D.setTriggerStrength('light'); assert.equal(D.triggerStrength(), 'light');
+  D.setTriggerStrength('strong');
+});
+
+test('the road on the motors: hard braking and a fast corner, from the brake, the stick and the speed', () => {
+  const road = (o) => D.roadRumble({ driving: true, speed: 40, gear: 4, brake: 0, steer: 0, ...o });
+  assert.deepEqual(road({}), { strong: 0, weak: 0 });
+  assert.deepEqual(road({ brake: 0.5 }), { strong: 0, weak: 0 });
+  const hard = road({ brake: 1 }), slow = road({ brake: 1, speed: 15 });
+  assert.ok(hard.weak > slow.weak && slow.weak > 0, `${hard.weak} ${slow.weak}`);
+  assert.ok(hard.strong > 0); assert.equal(slow.strong, 0);
+  assert.deepEqual(road({ brake: 1, speed: 8 }), { strong: 0, weak: 0 });
+  const turn = road({ steer: -1 });
+  assert.ok(turn.weak > 0 && turn.weak <= 0.4);
+  assert.deepEqual(road({ steer: 0.4 }), { strong: 0, weak: 0 });
+  assert.deepEqual(road({ steer: 1, speed: 10 }), { strong: 0, weak: 0 });
+  // lighter at a lighter strength; none in reverse, outside driving, or from a game that does not say the speed
+  assert.ok(Math.abs(road({ brake: 1, scale: 0.45 }).weak - hard.weak * 0.45) < 1e-9);
+  assert.deepEqual(road({ brake: 1, gear: 0 }), { strong: 0, weak: 0 });
+  assert.deepEqual(road({ brake: 1, driving: false }), { strong: 0, weak: 0 });
+  assert.deepEqual(D.roadRumble({ driving: true, brake: 1, steer: 1 }), { strong: 0, weak: 0 });
 });
