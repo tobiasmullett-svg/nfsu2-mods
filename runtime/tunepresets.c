@@ -13,14 +13,20 @@
  *   9      final drive; 0xA..0xF gears 1 to 6
  *   0x10, 0x11  nitrous: one slider, the two always 200 together (140 and 60
  *          as Street X's and URL's setups come, 150 and 50 pushed right)
- *   0x12..0x14  tyres and brakes
+ *   0x12   brake bias; 0x13, 0x14 front and rear tyre grip (100 is all the
+ *          grip the tyres have: the slider only takes some away)
  *   0x15, 0x16  front and rear downforce
- *   0x17   9 bytes at +0x17, 0x18 9 bytes at +0x20: the ECU's and the
- *          turbo's curves
- * (0, 1, 2, 3, 8, 0x10, 0x15 from a player's save: each slider pushed right
- * alone in a setup of its own on a Peugeot 106, which left 125, 113, 113,
- * 186, 150, 150 and 135 there; the rear's four from the code, which treats 3
- * and 7 alike.)  How far a slider goes depends on the car's parts: the
+ *   0x17   9 bytes at +0x17: the ECU's curve, a byte per 1000 rpm; 0x18 9
+ *          bytes at +0x20: the turbo's.  A dot moved on their graph moves
+ *          the others the other way (the first dot of the ECU's to its top
+ *          left 136 109 110 87 86 86 86 87 88): the graph's own doing
+ *          (tunegraph.c), so the presets leave both curves alone
+ * (0, 1, 2, 3, 8, 0x10, 0x12 to 0x15 and the curves from a player's saves:
+ * each slider pushed to its end alone in a setup of its own, which left 125,
+ * 113, 113, 186, 150, 150 and 135 pushed right on a Peugeot 106, and 42, 0
+ * and 0 for the bias and the grips pushed left; the rear's four from the
+ * code, which treats 3 and 7 alike; the gears from 0x59B080, which allows
+ * 0xA + n only on a gearbox of more than n gears.)  How far a slider goes depends on the car's parts: the
  * tuning object (a ride's +0x384: the setup at its +0x14, the dyno's at
  * [0x83A540]) answers a value's scale (0x5B0BD0 and 0x5B0C00: springs 0 to
  * 10, lowering -1.3 to 0.12 in), what of it the car's parts reach (0x5B2BD0
@@ -37,7 +43,12 @@
  * the player moves them, and Quit Tuning or Save Profile keep it in the car
  * (dyno.c).  A setup with any value of the player's own is left alone; the
  * dyno's own reset of a setup brings the preset back at its next load.
- * The gears, the tyres and brakes, and the two curves stay as they come.
+ * The gears, the brake bias and the two curves stay as they come.
+ *
+ * A kind's shares can be set without a new build, for trying them: a line
+ * of settings.ini by the variable's own name, NFSU2_TUNE_CIRCUIT, _DRAG,
+ * _DRIFT, _STREETX or _URL, with "value:share" pairs (the value's number as
+ * above, the share -1..1 or "skip"), as in NFSU2_TUNE_DRIFT = 0x14:-0.6 9:0.8
  * The log says every value's range and what was set ([tune]).
  * Original: none of this. */
 #include "cpu.h"
@@ -80,11 +91,39 @@ static const struct { uint8_t value; const char *name; float share[5]; } PRESETS
     { 0x07, "rear lowering",   { -0.6f, -0.3f, -0.4f, -0.7f, -0.7f } },
     { 0x08, "steering ratio",  {  0.2f, -0.5f,  0.8f,  0.6f,  0.1f } },
     { 0x09, "final drive",     {  SKIP, -0.4f,  0.7f,  0.5f, -0.15f } },
+    { 0x0a, "gear 1",          {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
+    { 0x0b, "gear 2",          {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
+    { 0x0c, "gear 3",          {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
+    { 0x0d, "gear 4",          {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
+    { 0x0e, "gear 5",          {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
+    { 0x0f, "gear 6",          {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
     { 0x10, "nitrous",         {  SKIP,  0.6f,  SKIP,  SKIP,  SKIP } },
+    { 0x12, "brake bias",      {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
+    { 0x13, "front tyre grip", {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
+    { 0x14, "rear tyre grip",  {  SKIP,  SKIP, -0.4f,  SKIP,  SKIP } },
     { 0x15, "front downforce", {  0.6f, -1.0f,  0.6f,  1.0f,  0.5f } },
     { 0x16, "rear downforce",  {  0.7f, -0.5f, -0.6f,  1.0f,  0.6f } },
 };
 static const char *const KINDS[5] = { "circuit", "drag", "drift", "Street X", "URL" };
+static const char *const KIND_ENV[5] = { "NFSU2_TUNE_CIRCUIT", "NFSU2_TUNE_DRAG", "NFSU2_TUNE_DRIFT", "NFSU2_TUNE_STREETX",
+                                         "NFSU2_TUNE_URL" };
+
+/* a value's share for the kind: the kind's line of settings.ini ("value:share" pairs) if it names the value, else
+ * PRESETS' */
+static float share_of(unsigned p, uint32_t kind){
+    const char *e = getenv(KIND_ENV[kind]);
+    while (e && *e){
+        char *end;
+        long v = strtol(e, &end, 0);
+        if (end == e || *end != ':'){ e = strpbrk(e, " ,;"); if (e) e++; continue; }
+        const char *val = end + 1;
+        float sh = !strncasecmp(val, "skip", 4) ? SKIP : strtof(val, &end);
+        if (v == (long)PRESETS[p].value) return sh == SKIP ? SKIP : sh < -1.f ? -1.f : sh > 1.f ? 1.f : sh;
+        e = strpbrk(val, " ,;");
+        if (e) e++;
+    }
+    return PRESETS[p].share[kind];
+}
 
 /* a guest function that answers in st0 (gcall puts the whole CPU back, the x87 stack with it) */
 static double fcall(CPU *c, uint32_t fn, uint32_t ecx, int n, const uint32_t *arg){
@@ -118,7 +157,7 @@ static int preset(CPU *c, uint32_t t, uint8_t *s, uint32_t kind){
     for (uint32_t i = 0; i < SETUP_SZ; i++){ was[i] = MR8(t + T_SETUP + i); MR8(t + T_SETUP + i) = s[i]; }
     for (unsigned p = 0; p < sizeof PRESETS / sizeof *PRESETS; p++){
         uint32_t v = PRESETS[p].value, arg[3] = { v, 0, 1 };
-        float share = PRESETS[p].share[kind];
+        float share = share_of(p, kind);
         if (!(gcall(c, FN_ALLOWED, t, 1, arg) & 0xffu)){
             fprintf(stderr, "[tune]   %-15s the car's parts do not allow it\n", PRESETS[p].name);
             continue;
