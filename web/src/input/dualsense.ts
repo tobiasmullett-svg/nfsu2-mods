@@ -48,7 +48,7 @@ interface HidDevice extends EventTarget {
   close(): Promise<void>;
   sendReport(reportId: number, data: BufferSource): Promise<void>;
 }
-interface HidReportEvent extends Event { readonly reportId: number }
+interface HidReportEvent extends Event { readonly reportId: number; readonly data: DataView }
 interface HidConnectionEvent extends Event { readonly device: HidDevice }
 interface Hid extends EventTarget {
   getDevices(): Promise<HidDevice[]>;
@@ -263,6 +263,105 @@ const KICK_MS = 110, LIMIT_MS = 400, FORGET_MS = 20000, MIN_TOP = 4500;
  *  idle and at the top of the revs (Hz) */
 const HELD_ON = 0.6, HELD_OFF = 0.45, HUM_HZ = [16, 46] as const;
 
+// ---- a DualSense over Bluetooth as the game's gamepad ------------------------------------------------------------
+// Over Bluetooth a DualSense starts with short reports (0x01) that Windows and Chrome read as a gamepad.  Its first
+// output report (the triggers', or the rumble's) turns it to its full reports (0x31), which they do not read: the
+// browser's gamepad goes still, or never shows (a player's DualSense on Windows, 2026-11-13: connected here, no
+// controller in the game).  So one open here over Bluetooth is read from its own reports, either kind, as SDL's
+// SDL_hidapi_ps5.c lays them out, and given to the game as a gamepad of the standard mapping (bluetoothPads:
+// steampad.ts allPads puts it in the browser's list in place of the browser's own).  Over USB the browser reads it as
+// it always did.
+
+/** a DualSense's state as the standard mapping has it: the sticks -1..1 (+y down), the 18 buttons 0..1 */
+export interface PadState { axes: [number, number, number, number]; buttons: number[] }
+
+const stick = (v: number) => Math.max(-1, Math.min(1, (v - 127.5) / 127.5));
+/** the D-pad's hat (0 up, clockwise in eighths, 8 and up none) -> up, down, left, right */
+const hatDirs = (h: number): [boolean, boolean, boolean, boolean] =>
+  h > 7 ? [false, false, false, false] : [h === 7 || h <= 1, h >= 3 && h <= 5, h >= 5 && h <= 7, h >= 1 && h <= 3];
+
+/** A DualSense's input report (data without its id) -> its state: 0x31, Bluetooth's full one (a tag byte, then USB's
+ *  0x01 layout: the sticks, the triggers, a counter, three bytes of buttons), or 0x01, Bluetooth's short one (the
+ *  sticks, three bytes of buttons with a counter, the triggers).  Else null. */
+export function readDualSense(reportId: number, d: DataView): PadState | null {
+  let lx, ly, rx, ry, l2, r2, b0, b1, b2;
+  if (reportId === 0x31 && d.byteLength >= 11) {
+    [lx, ly, rx, ry, l2, r2] = [1, 2, 3, 4, 5, 6].map(i => d.getUint8(i));
+    [b0, b1, b2] = [8, 9, 10].map(i => d.getUint8(i));
+  } else if (reportId === 0x01 && d.byteLength >= 9) {
+    [lx, ly, rx, ry, b0, b1, b2, l2, r2] = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => d.getUint8(i));
+  } else return null;
+  const [up, down, left, right] = hatDirs(b0 & 0x0f);
+  const on = (x: boolean) => x ? 1 : 0;
+  const lt = Math.max(l2 / 255, on((b1 & 0x04) !== 0) * 0.01), rt = Math.max(r2 / 255, on((b1 & 0x08) !== 0) * 0.01);
+  return {
+    axes: [stick(lx), stick(ly), stick(rx), stick(ry)],
+    // cross, circle, square, triangle, L1, R1, L2, R2, Create, Options, L3, R3, up, down, left, right, PS, touchpad
+    buttons: [on((b0 & 0x20) !== 0), on((b0 & 0x40) !== 0), on((b0 & 0x10) !== 0), on((b0 & 0x80) !== 0),
+      on((b1 & 0x01) !== 0), on((b1 & 0x02) !== 0), lt, rt,
+      on((b1 & 0x10) !== 0), on((b1 & 0x20) !== 0), on((b1 & 0x40) !== 0), on((b1 & 0x80) !== 0),
+      on(up), on(down), on(left), on(right), on((b2 & 0x01) !== 0), on((b2 & 0x02) !== 0)],
+  };
+}
+
+interface Button { pressed: boolean; touched: boolean; value: number }
+/** the gamepads of these, after the browser's own and Valve's (steampad.ts: 16 and up) */
+const BT_FIRST_INDEX = 24;
+const freeIndex = () => {
+  const used = new Set([...pads.values()].map(p => p.bt?.gp.index));
+  let i = BT_FIRST_INDEX;
+  while (used.has(i)) i++;
+  return i;
+};
+function announce(type: 'gamepadconnected' | 'gamepaddisconnected', gp: Gamepad) {
+  if (typeof dispatchEvent !== 'function') return;
+  const e = new Event(type);
+  Object.defineProperty(e, 'gamepad', { value: gp });
+  dispatchEvent(e);
+}
+
+/** a DualSense over Bluetooth as a Gamepad: its id as Chrome writes one (isDualSense), connected from its first
+ *  report; its rumble is this file's (gamepad.ts: a DualSense open here) */
+class BtGamepad {
+  readonly gp: Gamepad;
+  connected = false;
+  private buttons: Button[] = Array.from({ length: 18 }, () => ({ pressed: false, touched: false, value: 0 }));
+  private axes = [0, 0, 0, 0];
+  constructor(dev: HidDevice, index: number) {
+    const pid = dev.productId.toString(16).padStart(4, '0');
+    this.gp = { id: `${dev.productName || 'DualSense Wireless Controller'} (STANDARD GAMEPAD Vendor: 054c Product: ${pid})`,
+      index, mapping: 'standard', connected: false, timestamp: 0, axes: this.axes, buttons: this.buttons,
+      vibrationActuator: null, hapticActuators: [] } as unknown as Gamepad;
+  }
+  show(s: PadState) {
+    for (let i = 0; i < this.buttons.length; i++) {
+      const b = this.buttons[i], v = s.buttons[i] ?? 0;
+      b.value = v; b.pressed = v >= 0.5 || (i !== 6 && i !== 7 && v > 0); b.touched = v > 0;
+    }
+    for (let i = 0; i < 4; i++) this.axes[i] = s.axes[i];
+    (this.gp as unknown as { timestamp: number }).timestamp = performance.now();
+    if (!this.connected) {
+      this.connected = true;
+      (this.gp as unknown as { connected: boolean }).connected = true;
+      log(`[pad] ${this.gp.id}: over Bluetooth, read here as controller ${this.gp.index}`);
+      announce('gamepadconnected', this.gp);
+    }
+  }
+  drop() {
+    if (!this.connected) return;
+    this.connected = false;
+    (this.gp as unknown as { connected: boolean }).connected = false;
+    announce('gamepaddisconnected', this.gp);
+  }
+}
+
+/** the DualSenses over Bluetooth read here (steampad.ts allPads: in place of the browser's own) */
+export function bluetoothPads(): Gamepad[] {
+  const out: Gamepad[] = [];
+  for (const p of pads.values()) if (p.bt?.connected) out.push(p.bt.gp);
+  return out;
+}
+
 // ---- the controllers -----------------------------------------------------------------------------------------------
 
 let log: (s: string) => void = () => {};
@@ -280,15 +379,24 @@ class Pad {
   /** the road's rumble (roadRumble), played with the game's: the stronger of the two on each motor */
   road: Rumble = { strong: 0, weak: 0 };
 
+  /** over Bluetooth: the controller as the game's gamepad, read from its reports here (BtGamepad) */
+  bt: BtGamepad | null = null;
+
   constructor(readonly dev: HidDevice) {
     this.name = nameOf(dev) ?? 'DualSense';
     this.bluetooth = dev.collections.some(c => c.outputReports?.some(r => r.reportId === 0x31));
   }
   get transport() { return this.bluetooth ? 'Bluetooth' : 'USB'; }
 
-  /** over Bluetooth the controller's full reports are 0x31 too (a browser that lists no output reports) */
+  /** over Bluetooth the controller's full reports are 0x31 too (a browser that lists no output reports); there, its
+   *  reports are the game's gamepad */
   onReport = (e: Event) => {
-    if ((e as HidReportEvent).reportId === 0x31 && !this.bluetooth) { this.bluetooth = true; this.sent = ''; }
+    const r = e as HidReportEvent;
+    if (r.reportId === 0x31 && !this.bluetooth) { this.bluetooth = true; this.sent = ''; }
+    if (!this.bluetooth) return;
+    this.bt ??= new BtGamepad(this.dev, freeIndex());
+    const st = readDualSense(r.reportId, r.data);
+    if (st) this.bt.show(st);
   };
 
   /** the two effects, sent when they change (at most every SEND_MS, but a new one after QUIET_MS at once), and again
@@ -310,6 +418,7 @@ class Pad {
 
   close() {
     this.quiet();
+    this.bt?.drop();
     this.dev.removeEventListener('inputreport', this.onReport);
     this.queue = this.queue.then(() => this.dev.opened ? this.dev.close() : undefined).catch(() => {});
   }
@@ -341,7 +450,11 @@ function remove(dev: HidDevice) {
   p.close();
 }
 const onHidConnect = (e: Event) => void add((e as HidConnectionEvent).device);
-const onHidDisconnect = (e: Event) => { pads.delete((e as HidConnectionEvent).device); };
+const onHidDisconnect = (e: Event) => {
+  const dev = (e as HidConnectionEvent).device;
+  pads.get(dev)?.bt?.drop();
+  pads.delete(dev);
+};
 /** the tab closing: the triggers let go (they would keep their last effect until the controller sleeps) */
 const onPageHide = () => { for (const p of pads.values()) p.quiet(); };
 

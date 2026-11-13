@@ -246,3 +246,36 @@ test('the road on the motors: hard braking and a fast corner, from the brake, th
   assert.deepEqual(road({ brake: 1, driving: false }), { strong: 0, weak: 0 });
   assert.deepEqual(D.roadRumble({ driving: true, brake: 1, steer: 1 }), { strong: 0, weak: 0 });
 });
+
+test('a DualSense over Bluetooth read from its own reports: the full one (0x31) and the short one (0x01)', () => {
+  // 0x31: a tag byte, then the sticks, the triggers, a counter and the buttons as USB's 0x01 has them
+  const full = new Uint8Array(77);
+  full.set([0x00, 0, 255, 128, 128, 255, 64, 7, 0x20 | 0x02, 0x01 | 0x20, 0x01], 0);
+  const a = D.readDualSense(0x31, new DataView(full.buffer));
+  assert.ok(a);
+  assert.deepEqual(a.axes.map(v => Math.round(v * 100) / 100), [-1, 1, 0, 0]);   // left stick full left and down
+  assert.equal(a.buttons[0], 1);              // cross
+  assert.equal(a.buttons[1], 0);              // circle
+  assert.equal(a.buttons[4], 1);              // L1
+  assert.equal(a.buttons[9], 1);              // Options
+  assert.equal(a.buttons[6], 1);              // L2 all the way
+  assert.ok(Math.abs(a.buttons[7] - 64 / 255) < 1e-9);   // R2 a quarter
+  assert.equal(a.buttons[16], 1);             // PS
+  assert.deepEqual(a.buttons.slice(12, 16), [0, 0, 0, 1]);   // the hat east: right
+  // 0x01: the sticks, three bytes of buttons, the triggers
+  const short = new Uint8Array(9);
+  short.set([128, 0, 128, 128, 0x80 | 0x07, 0x02, 0x02, 0, 200]);
+  const b = D.readDualSense(0x01, new DataView(short.buffer));
+  assert.ok(b);
+  assert.ok(b.axes[1] < -0.99);               // left stick up
+  assert.equal(b.buttons[3], 1);              // triangle
+  assert.equal(b.buttons[5], 1);              // R1
+  assert.equal(b.buttons[17], 1);             // the touchpad
+  assert.deepEqual(b.buttons.slice(12, 16), [1, 0, 1, 0]);   // the hat north-west: up and left
+  assert.ok(Math.abs(b.buttons[7] - 200 / 255) < 1e-9);
+  // the hat at rest, and reports of other kinds or too short
+  short[4] = 0x08;
+  assert.deepEqual(D.readDualSense(0x01, new DataView(short.buffer)).buttons.slice(12, 16), [0, 0, 0, 0]);
+  assert.equal(D.readDualSense(0x02, new DataView(full.buffer)), null);
+  assert.equal(D.readDualSense(0x31, new DataView(new ArrayBuffer(4))), null);
+});

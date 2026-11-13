@@ -27,7 +27,8 @@ I'm aware of; all of the above was written for this port. These settings won't b
 them off: each one can be turned off on the Mods tab, and the presets stay off until you turn them on. If they help
 someone enjoy the game a bit more, that's great.
 
-Tested with a DualSense over USB in Chrome on Windows 11. Bluetooth is written but not yet tried on a controller.
+Tested with a DualSense over USB in Chrome on Windows 11. Over Bluetooth the page reads the controller itself (its
+first trigger report stops the browser's own reading of it); that path is new and not yet confirmed on a controller.
 For anything about these changes, open an issue on this fork; for the game and the port itself, see th0mk's notes
 below.
 
