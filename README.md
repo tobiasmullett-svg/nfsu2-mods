@@ -32,6 +32,11 @@ controller itself, since its first trigger report stops the browser's own readin
 For anything about these changes, open an issue on this fork; for the game and the port itself, see th0mk's notes
 below.
 
+The same features without this edition's name and look, in th0mk's project's own style (the triggers' settings under
+Controls, Controller; Tuning Presets on the Mods tab under Cars), are on the
+[`dualsense-pr`](https://github.com/tobiasmullett-svg/nfsu2-mods/tree/dualsense-pr) branch: one commit on top of the
+archived version, for anyone who wants to add them to their own copy.
+
 | Change | Code |
 |---|---|
 | Triggers and the rumble report | [web/src/input/dualsense.ts](web/src/input/dualsense.ts) |
