@@ -11,6 +11,13 @@ first, then under `### Fixes` what was broken and works now, which the popup kee
 insides, the forum bot, logs, tests, docs and cheat checks. A change that may or may not belong here is asked about
 before the release, not guessed.
 
+## 2026-11-13 (d070d49)
+
+- **DualSense Edition:** a DualSense's adaptive triggers push back and shake with the engine, the brakes and crashes (Mods tab: Off, Light, Medium or Strong).
+- **DualSense Edition:** a DualSense plays the game's rumble, and rumbles under hard braking and in fast corners (Mods tab: Road Rumble).
+- **DualSense Edition:** Tuning Presets: the Dyno's setups start from a preset for each kind of race (Mods tab: Off, On or Always).
+- **Start page:** a new look in neon blue and purple, with transitions.
+
 ## 2026-11-08 (314555b)
 
 - **Free roam:** your own license plate (up to 8 letters and digits, Settings, Online), seen by everyone in free roam.

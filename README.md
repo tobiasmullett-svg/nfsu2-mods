@@ -1,4 +1,46 @@
-# Need for Speed: Underground 2 in the browser
+# Need for Speed: Underground 2 in the browser: DualSense Edition
+
+This is a fork of [th0mk's Underground 2 Revived](https://github.com/th0mk/nfsu2-web) (nfsu2.xyz) that adds support
+for a PlayStation 5 DualSense controller and tuning presets. Everything else is th0mk's project as archived on
+9 November 2026, with its credits below. It is not an official nfsu2.xyz release, and its changes are not on
+nfsu2.xyz: you build it and run the server yourself, with your own copy of the game, as the rest of this README
+describes. The changes are on this repository's `main` branch (and `dualsense-triggers`, where they were made).
+
+![The DualSense Edition's start page](docs/web/dualsense-edition.png)
+
+What it adds, each on the Mods tab under **DualSense Edition**:
+
+- **DualSense Adaptive Triggers:** the throttle has a light spring, hums with the engine when held down (faster as the
+  revs climb) and kicks on a gear shift; the brake stiffens with speed and judders under hard braking; both shake in a
+  crash. Off, Light, Medium or Strong. Connect the controller once under Controls, Controller, "Connect a DualSense"
+  (Chrome or Edge on a computer: it needs WebHID; Steam's PlayStation controller support must be off).
+- **DualSense rumble:** the game's rumble on a DualSense, which the browser's own vibration did not play, and **Road
+  Rumble**: the controller rumbles under hard braking and in fast corners.
+- **Tuning Presets:** the Dyno's five setups (circuit, drag, drift, Street X, URL) start from a preset for their kind of
+  race: suspension, steering ratio, final drive, brake bias, tyre grip and downforce, fitted to the range your car's
+  parts allow. On fills a setup you never touched; Always sets the preset's sliders each time a setup opens. The
+  presets are a starting point from general tuning advice, not measured lap times.
+- **A new look for the start page:** neon blue and purple, with transitions.
+
+A note from me: there may already be mods for the PC game that do some of this. I haven't copied anyone's work that
+I'm aware of; all of the above was written for this port. These settings won't be for everyone, and you may prefer
+them off: each one can be turned off on the Mods tab, and the presets stay off until you turn them on. If they help
+someone enjoy the game a bit more, that's great.
+
+Tested with a DualSense over USB in Chrome on Windows 11. Bluetooth is written but not yet tried on a controller.
+For anything about these changes, open an issue on this fork; for the game and the port itself, see th0mk's notes
+below.
+
+| Change | Code |
+|---|---|
+| Triggers and the rumble report | [web/src/input/dualsense.ts](web/src/input/dualsense.ts) |
+| Road Rumble | [web/src/input/roadrumble.ts](web/src/input/roadrumble.ts) |
+| Tuning Presets | [runtime/tunepresets.c](runtime/tunepresets.c) |
+| The game's status the triggers read | [runtime/web/status_web.c](runtime/web/status_web.c) |
+
+---
+
+th0mk's README for the original project follows; "this repository" in it is [th0mk/nfsu2-web](https://github.com/th0mk/nfsu2-web).
 
 > [!IMPORTANT]
 > This repository is archived. nfsu2.xyz keeps running and getting updates, but from 9 November 2026 development
