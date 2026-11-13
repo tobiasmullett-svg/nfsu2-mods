@@ -1,7 +1,9 @@
 /* tunepresets.c -- Performance Tuning / Dyno: a setup the player never touched
  * opens with a preset for its kind of race (tune_presets = on,
- * NFSU2_TUNE_PRESETS=1; off by default: the original's, every slider in the
- * middle).
+ * NFSU2_TUNE_PRESETS=on; off by default: the original's, every slider in the
+ * middle).  tune_presets = always: every setup, each time it opens, takes the
+ * preset's values (those the preset sets; the others stay the player's), for
+ * trying presets whose shares change (NFSU2_TUNE_<KIND>, below).
  *
  * The game (SPEED2.EXE v1.2 NA).  A setup is 0x29 bytes, each 100 in the
  * middle and 0..200 (dyno.c: the car's record keeps 5, 0 circuit and sprint,
@@ -138,6 +140,9 @@ static double fcall(CPU *c, uint32_t fn, uint32_t ecx, int n, const uint32_t *ar
     return r;
 }
 
+/* where a value of a setup as the game makes it stands: 100, but Street X's final drive (127) */
+static uint8_t made(uint32_t v, uint32_t kind){ return kind == 3 && v == 9 ? 127 : 100; }
+
 /* a setup as the game makes it: every byte 100, but Street X's final drive (127) and Street X's and URL's nitrous
  * (140 and 60) */
 static int untouched(const uint8_t *s, uint32_t kind){
@@ -161,6 +166,13 @@ static int preset(CPU *c, uint32_t t, uint8_t *s, uint32_t kind){
         if (!(gcall(c, FN_ALLOWED, t, 1, arg) & 0xffu)){
             fprintf(stderr, "[tune]   %-15s the car's parts do not allow it\n", PRESETS[p].name);
             continue;
+        }
+        /* a value the preset sets counts from where the game makes it, so a preset applied again does not go further */
+        if (share != SKIP){
+            s[v] = made(v, kind);
+            if (v == V_NITROUS) s[V_NITROUS + 1u] = (uint8_t)(200 - s[v]);
+            MR8(t + T_SETUP + v) = s[v];
+            if (v == V_NITROUS) MR8(t + T_SETUP + V_NITROUS + 1u) = s[V_NITROUS + 1u];
         }
         /* the slider's scale (springs: 0 to 10), and inside it what this car's parts reach (a Peugeot 106's front
          * springs: pushed right as far as they go, the byte was 125 and the bar ended at 8 of 10) */
@@ -205,8 +217,11 @@ static int preset(CPU *c, uint32_t t, uint8_t *s, uint32_t kind){
 
 /* 0x50FC60 (kind): the visit's copy of the kind into the setup being tuned */
 void sub_0050fc60(CPU *c){
-    static int on = -1;
-    if (on < 0) on = setting_bool("NFSU2_TUNE_PRESETS", 0);
+    static int on = -1;            /* 0 off, 1 untouched setups only, 2 every setup each time it opens */
+    if (on < 0){
+        const char *e = getenv("NFSU2_TUNE_PRESETS");
+        on = e && !strcasecmp(e, "always") ? 2 : setting_bool("NFSU2_TUNE_PRESETS", 0);
+    }
     uint32_t dyno = c->ecx, kind = MR32(c->esp + 4u);
     if (on && dyno == DYNO && kind < 5u && guest_rd32(DYNO + D_RECORD) && guest_ok(DYNO + D_VISIT, 5u * SETUP_SZ)){
         uint32_t t = guest_rd32(DYNO + D_TUNED), at = DYNO + D_VISIT + kind * SETUP_SZ;
@@ -214,13 +229,16 @@ void sub_0050fc60(CPU *c){
         for (uint32_t i = 0; i < SETUP_SZ; i++) s[i] = MR8(at + i);
         if (!t || !guest_ok(t, 0x100u))
             fprintf(stderr, "[tune] f=%ld the %s setup: no tuning object (0x%08x)\n", autotest_frame(), KINDS[kind], t);
-        else if (untouched(s, kind)){
-            fprintf(stderr, "[tune] f=%ld the %s setup is untouched: its preset (tuning object 0x%08x, the screens' 0x%08x)\n",
-                    autotest_frame(), KINDS[kind], t, guest_rd32(G_TUNING));
+        else if (on == 2 || untouched(s, kind)){
+            fprintf(stderr, "[tune] f=%ld the %s setup %s: its preset (tuning object 0x%08x, the screens' 0x%08x)\n",
+                    autotest_frame(), KINDS[kind], on == 2 ? "(tune_presets = always)" : "is untouched", t,
+                    guest_rd32(G_TUNING));
             int n = preset(c, t, s, kind);
             for (uint32_t i = 0; i < SETUP_SZ; i++) MR8(at + i) = s[i];
             fprintf(stderr, "[tune] %d values set\n", n);
         }
+        else fprintf(stderr, "[tune] f=%ld the %s setup has values of its own: left as it is (tune_presets = always sets "
+                     "it all the same)\n", autotest_frame(), KINDS[kind]);
     }
     sub_0050fc60_orig(c);
 }

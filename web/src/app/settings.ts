@@ -212,7 +212,7 @@ export const KEYS: readonly KeyDef[] = [
   { key: 'stance', env: 'NFSU2_STANCE', kind: 'bool', scope: 'web' },
   // the dyno's untouched setups open with a preset for their kind of race (runtime/tunepresets.c).  Not in bundle.m's
   // table: there a lower-case key, so it reaches the runtime as NFSU2_TUNE_PRESETS all the same
-  { key: 'tune_presets', env: 'NFSU2_TUNE_PRESETS', kind: 'bool', scope: 'web' },
+  { key: 'tune_presets', env: 'NFSU2_TUNE_PRESETS', kind: 'enum', vals: 'off|on|always', scope: 'web' },
   // other players' cars with the mods' looks or as the original game draws them (runtime/stance.c: their stance;
   // runtime/modpacks.c: a mod's parts, their look-alikes, else the stock ones, in free roam's cars and the race's).  Not
   // in bundle.m's table: there a lower-case key, so it reaches the runtime as NFSU2_OTHERS_MOD_PARTS all the same
@@ -387,8 +387,10 @@ export const TEMPLATE = `# NFSU2 settings, read at every launch.
 # Performance Tuning (the Dyno): a setup you never touched opens with a
 # preset for its kind of race (circuit, drag, drift, Street X, URL), fitted
 # to the sliders your car's parts allow.  Move the sliders from there as you
-# like; a setup with values of your own is left alone.  off = the original
-# game: every slider in the middle.  [NFSU2_TUNE_PRESETS]
+# like; a setup with values of your own is left alone.  always = every
+# setup takes the preset's values each time you open it, yours or not (the
+# sliders the preset does not set stay as you left them).  off = the
+# original game: every slider in the middle.  [NFSU2_TUNE_PRESETS]
 #tune_presets = off
 
 # Other players' cars: shown = with the looks they chose with the mods
