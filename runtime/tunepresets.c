@@ -22,9 +22,10 @@
  * 186, 150, 150 and 135 there; the rear's four from the code, which treats 3
  * and 7 alike.)  How far a slider goes depends on the car's parts: the
  * tuning object (a ride's +0x384: the setup at its +0x14, the dyno's at
- * [0x83A540]) answers a value's least (0x5B0C00), most (0x5B0BD0) and current
- * (0x5B3E40) in the slider's own unit, and whether the car's parts allow it
- * at all (0x59B080).
+ * [0x83A540]) answers a value's scale (0x5B0BD0 and 0x5B0C00: springs 0 to
+ * 10, lowering -1.3 to 0.12 in), what of it the car's parts reach (0x5B2BD0
+ * and 0x5B2BA0) and what the setup's byte gives (0x5B3E40), each in the
+ * slider's own unit, and whether the car's parts allow it at all (0x59B080).
  *
  * 0x50FC60 (the kind) loads a kind's setup from the visit's copy into the
  * one being tuned (Mode Select and the tuning screen's start).  Here, before
@@ -57,8 +58,10 @@ void sub_0050fc60_orig(CPU *c);
 #define T_SETUP         0x14u         /* a tuning object: its setup */
 #define SETUP_SZ        0x29u
 #define FN_ALLOWED      0x0059b080u   /* thiscall tuning (value) -> al: the car's parts allow it */
-#define FN_MOST         0x005b0bd0u   /* thiscall tuning (value, point, 1) -> st0: the slider's most */
-#define FN_LEAST        0x005b0c00u   /* ... its least */
+#define FN_SCALE_A      0x005b0bd0u   /* thiscall tuning (value, point, 1) -> st0: one end of the slider's scale */
+#define FN_SCALE_B      0x005b0c00u   /* ... the other (which is the lower differs: both are asked and sorted) */
+#define FN_REACH_A      0x005b2bd0u   /* ... one end of what the car's parts let the slider reach (its coloured bar) */
+#define FN_REACH_B      0x005b2ba0u   /* ... the other */
 #define FN_CURRENT      0x005b3e40u   /* ... what the setup's byte gives */
 #define V_NITROUS       0x10u
 #define SKIP            9.0f
@@ -120,8 +123,15 @@ static int preset(CPU *c, uint32_t t, uint8_t *s, uint32_t kind){
             fprintf(stderr, "[tune]   %-15s the car's parts do not allow it\n", PRESETS[p].name);
             continue;
         }
-        double most = fcall(c, FN_MOST, t, 3, arg), least = fcall(c, FN_LEAST, t, 3, arg);
-        double now = fcall(c, FN_CURRENT, t, 3, arg);
+        /* the slider's scale (springs: 0 to 10), and inside it what this car's parts reach (a Peugeot 106's front
+         * springs: pushed right as far as they go, the byte was 125 and the bar ended at 8 of 10) */
+        double sa = fcall(c, FN_SCALE_A, t, 3, arg), sb = fcall(c, FN_SCALE_B, t, 3, arg);
+        double ra = fcall(c, FN_REACH_A, t, 3, arg), rb = fcall(c, FN_REACH_B, t, 3, arg);
+        double least = fmin(sa, sb), most = fmax(sa, sb), now = fcall(c, FN_CURRENT, t, 3, arg);
+        if (isfinite(ra) && isfinite(rb) && fmax(ra, rb) > fmin(ra, rb) && fmax(fmin(ra, rb), least) < fmin(fmax(ra, rb), most)){
+            least = fmax(fmin(ra, rb), least); most = fmin(fmax(ra, rb), most);
+        }
+        fprintf(stderr, "[tune]   %-15s scale %g .. %g, reach %g .. %g, now %g\n", PRESETS[p].name, fmin(sa, sb), fmax(sa, sb), ra, rb, now);
         if (!(most > least) || !isfinite(now)){
             fprintf(stderr, "[tune]   %-15s no range (%g .. %g)\n", PRESETS[p].name, least, most);
             continue;
