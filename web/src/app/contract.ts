@@ -52,6 +52,8 @@ export interface InputOptions extends CommonOptions {
   toggleFullscreen?: () => void;
   /** the shell's own use of the controller: its menu (Home) and dialogs */
   padPage?: PadPage;
+  /** the game's status table, for a DualSense's adaptive triggers (input/dualsense.ts) */
+  padStatus?: () => ReadonlyMap<string, number> | null;
 }
 
 export interface NetOptions extends CommonOptions {

@@ -272,6 +272,14 @@ export const MODS: readonly Mod[] = [
     details: 'In a career race the game slows the opponents ahead of you and gives the ones behind more power and grip. Original, the default, keeps that; No boost keeps the waiting, but one behind never beats its own pace; Off drops both, as Quick Race with Catch Up off. Only in your own career races: never in Quick Race, LAN or online races.',
     online: 'career', files: ['runtime/catchup.c'],
   },
+  // ---- Cars
+  {
+    id: 'tune-presets', name: 'Tuning Presets', authors: [{ name: 'tobiasmullett-svg', url: 'https://github.com/tobiasmullett-svg' }],
+    links: {}, kind: 'car', uses: 'original', control: { setting: 'tune_presets', values: ['on', 'always'] },
+    line: N('The Dyno\'s setups start from a preset for each kind of race.'),
+    details: 'Circuit, drag, drift, Street X and URL each get their own suspension, steering, final drive, brake bias and downforce, fitted to what your car\'s parts allow. On fills a setup you never touched; Always sets the preset\'s sliders each time you open one. The sliders it does not set stay as you left them.',
+    online: 'you', files: ['runtime/tunepresets.c'],
+  },
 ];
 
 /** one of our changes: its name, its key ('': none) and what it does, in one short line */

@@ -167,7 +167,8 @@ export class GameSession {
       if (!a) void o.audio?.close().catch(() => {});
     });
     void attach('input', () => attachInput(s.proc, o.canvas, {
-      ...common, stage: o.stage, toggleFullscreen: o.toggleFullscreen, padPage: o.padPage, viewRect: () => s.viewRect(),
+      ...common, stage: o.stage, toggleFullscreen: o.toggleFullscreen, padPage: o.padPage, padStatus: () => s.status?.read() ?? null,
+      viewRect: () => s.viewRect(),
     })).then(i => { s.input = i; });
     if (o.netName !== null)
       void attach('network', () => attachNet(s.proc, {

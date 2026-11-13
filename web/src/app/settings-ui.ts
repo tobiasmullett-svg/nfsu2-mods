@@ -86,6 +86,7 @@ export const MOD_CONTROLS: Record<string, Control> = {
   catchup: { t: 'seg', opts: [['original', N('Original')], ['noboost', N('No boost')], ['off', N('Off')]] },
   gearbox_whine: { t: 'switch' },
   hq_vinyls: { t: 'switch' },
+  tune_presets: { t: 'seg', opts: [['off', N('Off')], ['on', N('On')], ['always', N('Always')]] },
   // mod_rims: { t: 'switch' },   (the rims: out for now, mods.ts)
 };
 /** the Mods tab's one row that is no mod's: how other players' cars show the mods' looks (mods-ui.ts: first in "Seen by
@@ -149,6 +150,9 @@ const GROUPS: Group[] = [
   ] },
   { title: N('Controller'), more: N('More controller settings'), at: 'controller-body', head: N('Settings'), items: [
     { key: 'rumble', label: N('Rumble'), help: N('Controller rumble, and phone vibration with the touch controls.'), c: { t: 'switch' } },
+    { key: 'trigger_strength', label: N('Trigger strength'), help: N('The triggers push back and shake with the engine, the brakes and crashes.'),
+      c: { t: 'seg', opts: [['off', N('Off')], ['light', N('Light')], ['medium', N('Medium')], ['strong', N('Strong')]] } },
+    { key: 'road_rumble', label: N('Road rumble'), help: N('A DualSense rumbles under hard braking and in fast corners.'), c: { t: 'switch' } },
     { key: 'gamepad', label: N('Controller'), help: N('On keeps a controller once it was connected; hotplug only while connected.'), c: { t: 'seg', opts: [['on', N('On')], ['hotplug', N('Hotplug')], ['off', N('Off')]] }, more: true },
     { key: 'gamepad_menu_keys', label: N('Menu buttons'), help: N('A, B and View also act as Enter, Esc and Q in the menus.'), c: { t: 'switch' }, more: true },
     { key: 'gamepad_deadzone', label: N('Stick dead zone'), help: N('Fraction of full travel, 0 to 0.9.'), c: { t: 'num', min: 0, max: 0.9, step: 0.01 }, more: true },

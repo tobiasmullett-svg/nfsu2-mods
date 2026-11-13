@@ -210,6 +210,13 @@ export const KEYS: readonly KeyDef[] = [
   // friends in free roam; kept in MODPARTS.DAT by runtime/modpacks.c).  Not in bundle.m's table: there a lower-case key,
   // so it reaches the runtime as NFSU2_STANCE all the same
   { key: 'stance', env: 'NFSU2_STANCE', kind: 'bool', scope: 'web' },
+  // the dyno's untouched setups open with a preset for their kind of race (runtime/tunepresets.c).  Not in bundle.m's
+  // table: there a lower-case key, so it reaches the runtime as NFSU2_TUNE_PRESETS all the same
+  { key: 'tune_presets', env: 'NFSU2_TUNE_PRESETS', kind: 'enum', vals: 'off|on|always', scope: 'web' },
+  // a DualSense's adaptive triggers, how strong (off: none, its rumble still), and the road on its motors: the page's
+  // own (web/src/input/dualsense.ts, roadrumble.ts; shell.ts hands them over), not the runtime's
+  { key: 'trigger_strength', env: 'NFSU2_TRIGGER_STRENGTH', kind: 'enum', vals: 'off|light|medium|strong', scope: 'web' },
+  { key: 'road_rumble', env: 'NFSU2_ROAD_RUMBLE', kind: 'bool', scope: 'web' },
   // other players' cars with the mods' looks or as the original game draws them (runtime/stance.c: their stance;
   // runtime/modpacks.c: a mod's parts, their look-alikes, else the stock ones, in free roam's cars and the race's).  Not
   // in bundle.m's table: there a lower-case key, so it reaches the runtime as NFSU2_OTHERS_MOD_PARTS all the same
@@ -380,6 +387,25 @@ export const TEMPLATE = `# NFSU2 settings, read at every launch.
 # off = the original game (the values stay for when it is on again).
 # [NFSU2_STANCE]
 #stance = off
+
+# Performance Tuning (the Dyno): a setup you never touched opens with a
+# preset for its kind of race (circuit, drag, drift, Street X, URL), fitted
+# to the sliders your car's parts allow.  Move the sliders from there as you
+# like; a setup with values of your own is left alone.  always = every
+# setup takes the preset's values each time you open it, yours or not (the
+# sliders the preset does not set stay as you left them).  off = the
+# original game: every slider in the middle.  [NFSU2_TUNE_PRESETS]
+#tune_presets = off
+
+# A DualSense connected under Controls, Controller: how hard its triggers
+# push back and shake (the engine, gear shifts, the brakes, a crash).
+# off = no trigger effects; the controller still rumbles.
+# [NFSU2_TRIGGER_STRENGTH]
+#trigger_strength = strong
+
+# A DualSense's rumble under hard braking and in fast corners, on top of
+# the game's own.  off = the game's rumble only.  [NFSU2_ROAD_RUMBLE]
+#road_rumble = on
 
 # Other players' cars: shown = with the looks they chose with the mods
 # (their stance), as they see them; original = as the original game draws

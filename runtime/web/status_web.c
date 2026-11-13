@@ -7,6 +7,7 @@
 #include "cpu.h"
 #include "game.h"
 #include "status_proto.h"
+#include "setting.h"
 #include "host_abi.h"
 #include <pthread.h>
 #include <string.h>
@@ -208,6 +209,29 @@ static void touch_state(int drive){
                     (drive & 3) ? fast() : 0 };
     if (memcmp(v, last, sizeof v)){ memcpy(last, v, sizeof v); host_status_set_n(slot, v, 4); }
 }
+/* "car_speed", "car_rpm", "car_gear": the player's car while they drive, for a
+ * DualSense's adaptive triggers (web/src/input/dualsense.ts): its speed (m/s,
+ * in steps of 0.5), its engine's rpm (in steps of 25) and its gear (0 reverse,
+ * 1 neutral, 2 first ..); the steps keep a steady car from a new table every
+ * frame.  0, 0 and -1 while not driving.  Not with rumble off (NFSU2_FF=0):
+ * the page then has no car to go by and leaves the triggers alone. */
+static void car_state(int drive){
+    static int slot[3] = { -2, -2, -2 }, on = -1;
+    static double last[3] = { -2, -2, -2 };
+    if (on < 0) on = setting_bool("NFSU2_FF", 1);
+    if (!on) return;
+    if (slot[0] == -2){ slot[0] = host_status_slot("car_speed"); slot[1] = host_status_slot("car_rpm"); slot[2] = host_status_slot("car_gear"); }
+    uint32_t car = (drive & 3) ? rd32_ok(rd32_ok(G_PLAYER0) + PL_CAR) : 0u;
+    double v[3] = { 0, 0, -1 };
+    if (car && mem_is_committed(car + CAR_SPEED) && mem_is_committed(car + CAR_RPM + 3u)){
+        float sp = MRF32(car + CAR_SPEED), rpm = MRF32(car + CAR_RPM);
+        if (sp < 0.f) sp = -sp;
+        if (sp == sp && sp < 1000.f) v[0] = (double)(int)(sp * 2.f + 0.5f) / 2.0;
+        if (rpm > 0.f && rpm < 100000.f) v[1] = (double)((int)(rpm / 25.f + 0.5f) * 25);
+        v[2] = (double)(int32_t)MR32(car + CAR_GEAR);
+    }
+    if (memcmp(v, last, sizeof v)){ memcpy(last, v, sizeof v); host_status_set_n(slot, v, 3); }
+}
 /* "sms": the text message of ours (sms.c) the game has in its inbox this
  * game, 0 none, so the page asks for it no more (web/src/app/playtime.ts) */
 int sms_delivered(void);
@@ -231,6 +255,7 @@ void status_web_frame(void){
     if (nc != clast && cslot >= 0){ clast = nc; host_status_set(cslot, nc); }
     roam_state();
     touch_state(v);
+    car_state(v);
 }
 
 /* main_web.c, before the guest starts */

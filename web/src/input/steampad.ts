@@ -23,6 +23,8 @@
 // controller's pads only click, SDL leaves them be: no rumble).  Not read: the 2015 controller over Bluetooth (its
 // reports come in pieces), gyros, the pads' touch.
 
+import { bluetoothPads, isDualSense } from './dualsense';
+
 /** a WebHID device, as much of it as this file uses (TypeScript's DOM types have none) */
 interface HidDevice extends EventTarget {
   readonly opened: boolean;
@@ -510,6 +512,13 @@ export function useSteamPads(logf: (s: string) => void): () => void {
 export function allPads(): (Gamepad | null)[] {
   let own: (Gamepad | null)[] = [];
   try { own = typeof navigator.getGamepads === 'function' ? Array.from(navigator.getGamepads()) : []; } catch { /* none */ }
+  // a DualSense over Bluetooth read by dualsense.ts: in place of the browser's own, which goes still once its triggers
+  // are set
+  const bt = bluetoothPads();
+  if (bt.length) {
+    own = own.map(g => g && isDualSense(g.id) ? null : g);
+    for (const g of bt) { while (own.length <= g.index) own.push(null); own[g.index] = g; }
+  }
   if (!pads.size) return own;
   for (const p of pads.values()) {
     if (!p.connected) continue;

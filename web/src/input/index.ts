@@ -69,6 +69,8 @@ export interface InputOptions {
   passThrough?: string[];
   /** the page's own use of the controller: its menu and dialogs (gamepad.ts) */
   padPage?: PadPage;
+  /** the game's status table (runtime/web/status_proto.h), for a DualSense's adaptive triggers (dualsense.ts) */
+  padStatus?: () => ReadonlyMap<string, number> | null;
   log?: (s: string) => void;
 }
 export interface InputStats {
@@ -620,7 +622,7 @@ export function attachInput(proc: GameProcess, element: HTMLElement, opts: Input
       focus: (on) => { active = on; push(IEV_FOCUS, 0, 0, 0, [], on ? 1 : 0, IREASON_SCRIPT); },
     });
     if (opts.gamepads ?? true)
-      pads = new PadPoller(h, u8, base, () => dispatchEvent(new Event('nfsu2-gesture')), log, onUse, opts.padPage);
+      pads = new PadPoller(h, u8, base, () => dispatchEvent(new Event('nfsu2-gesture')), log, onUse, opts.padPage, opts.padStatus);
     void loadLayout();
     // the game starts active (CreateWindowEx posts the activation): tell it
     // if the page is not
