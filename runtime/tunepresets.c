@@ -43,7 +43,7 @@
  * the player moves them, and Quit Tuning or Save Profile keep it in the car
  * (dyno.c).  A setup with any value of the player's own is left alone; the
  * dyno's own reset of a setup brings the preset back at its next load.
- * The gears, the brake bias and the two curves stay as they come.
+ * The gears and the two curves stay as they come.
  *
  * A kind's shares can be set without a new build, for trying them: a line
  * of settings.ini by the variable's own name, NFSU2_TUNE_CIRCUIT, _DRAG,
@@ -98,7 +98,7 @@ static const struct { uint8_t value; const char *name; float share[5]; } PRESETS
     { 0x0e, "gear 5",          {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
     { 0x0f, "gear 6",          {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
     { 0x10, "nitrous",         {  SKIP,  0.6f,  SKIP,  SKIP,  SKIP } },
-    { 0x12, "brake bias",      {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
+    { 0x12, "brake bias",      {  0.2f,  SKIP, -0.3f,  0.1f,  0.2f } },   /* the slider: rear on its left, front on its right */
     { 0x13, "front tyre grip", {  SKIP,  SKIP,  SKIP,  SKIP,  SKIP } },
     { 0x14, "rear tyre grip",  {  SKIP,  SKIP, -0.4f,  SKIP,  SKIP } },
     { 0x15, "front downforce", {  0.6f, -1.0f,  0.6f,  1.0f,  0.5f } },
