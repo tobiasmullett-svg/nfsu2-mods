@@ -86,6 +86,9 @@ export const MOD_CONTROLS: Record<string, Control> = {
   catchup: { t: 'seg', opts: [['original', N('Original')], ['noboost', N('No boost')], ['off', N('Off')]] },
   gearbox_whine: { t: 'switch' },
   hq_vinyls: { t: 'switch' },
+  trigger_strength: { t: 'seg', opts: [['off', N('Off')], ['light', N('Light')], ['medium', N('Medium')], ['strong', N('Strong')]] },
+  road_rumble: { t: 'switch' },
+  tune_presets: { t: 'seg', opts: [['off', N('Off')], ['on', N('On')], ['always', N('Always')]] },
   // mod_rims: { t: 'switch' },   (the rims: out for now, mods.ts)
 };
 /** the Mods tab's one row that is no mod's: how other players' cars show the mods' looks (mods-ui.ts: first in "Seen by

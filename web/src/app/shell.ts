@@ -39,6 +39,7 @@ import { TitleMark } from './titlemark';
 import { DriftPanel } from './drift';
 import { PhotoMode, photoMark } from './photo';
 import type { PadPage } from '../input/gamepad';
+import { setDualSenseSettings, setStrengthWriter } from '../input/dualsense';
 import type { NetBanCase, NetQueue, NetRaces, NetRemoved, NetRename } from '../net';
 import { blockList, changedSettings, checkSetting, HOST_FIXED, pageOnly, putKey, resolveEnv, TEMPLATE, uiPack, type Resolved } from './settings';
 import { SettingsFile } from './settings-store';
@@ -1205,6 +1206,12 @@ function siteDeps() {
 }
 /** our controls' keys as settings.ini has them now (not while a game runs: it keeps the ones it started with), on the
  *  keys' list and in the Site tab */
+/** settings.ini's trigger_strength and road_rumble to the DualSense's code (dualsense.ts), each time the file is read or
+ *  written */
+function dualSenseNow() {
+  if (!settings) return;
+  setDualSenseSettings({ strength: settings.current('trigger_strength'), road: settings.current('road_rumble') !== 'off' });
+}
 function siteKeysNow() {
   if (!session) applySiteKeys(resolveEnv(settingsFile.forGame ?? settingsFile.text, ENVIRONMENT, {}, DEVICE).env);
   siteKeyList($('#keys'));
@@ -2597,14 +2604,18 @@ export async function boot() {
       evaluate();
       applyLanguage();
       siteKeysNow();
+      dualSenseNow();
     },
-    onLoaded: () => { applyLanguage(); siteKeysNow(); },
+    onLoaded: () => { applyLanguage(); siteKeysNow(); dualSenseNow(); },
     // the tab that owns the saves is the one whose Play reads the file: another tab only looks
     readOnly: () => !instance.owner, say: pageToast, confirm: confirmBox,
     nameRow: (row, input, ctl) => nameRow.attach(row, input, ctl),
     quietSave: (key, value) => key === 'roam_name' && nameRow.notPlayed(value),
     rowAfter: key => key === 'race_music' ? lastfmRow.el : null,
   }, $('#online'));
+  // a DualSense's trigger strength and road rumble (dualsense.ts): settings.ini's, in a running game too; the Controls
+  // sheet's Trigger strength writes the file, so the Mods tab's row shows it
+  setStrengthWriter(v => void settings.set('trigger_strength', v));
   // the language picker at the top: the same setting as the Game tab's Language
   const pick = $<HTMLSelectElement>('#lang-pick');
   pick.replaceChildren(...LANGUAGES.map(l => Object.assign(document.createElement('option'), { value: l, textContent: NATIVE[l], lang: LOCALE[l] })));

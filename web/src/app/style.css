@@ -1,24 +1,28 @@
-/* The start page, dressed like the game's own menus: black, grey panels,
- * dark value boxes, lime for titles, values and the selected item (its
- * glow is also the keyboard focus), grey-rimmed black buttons.  One type
- * family; bold italic for titles, labels, values and buttons as in the
- * game, upright for sentences.  Sizes: 14/20, 16/24, 20/28, 32/40.
- * Every size and space is a multiple of 4 px. */
+/* The start page of the DualSense Edition: the game's menus' shapes (bold italic titles, value boxes, the selected
+ * item's glow) in neon: deep indigo panels on a near-black night, cyan for titles, values and the selected item (its
+ * glow is also the keyboard focus), purple beside it in the gradients.  One type family; bold italic for titles,
+ * labels, values and buttons as in the game, upright for sentences.  Sizes: 14/20, 16/24, 20/28, 32/40.  Every size
+ * and space is a multiple of 4 px. */
 
 :root {
-  --bg: #0d0d0d;
-  --frame: #171717;           /* the header bar and dialogs: the game's dark frame */
-  --panel: #262626;           /* sections: the game's grey panels */
-  --field: #121212;           /* value boxes, inputs, key caps */
-  --line: #3a3a3a;            /* dividers (decoration only) */
-  --edge: #8a8a8a;            /* rims of controls: 4.4:1 on a panel */
+  --bg: #06050d;
+  --frame: #0e0b1e;           /* the header bar and dialogs */
+  --panel: #131029;           /* sections */
+  --field: #0a0818;           /* value boxes, inputs, key caps */
+  --line: #2a2550;            /* dividers (decoration only) */
+  --edge: #7a72c8;            /* rims of controls: 4.3:1 on a panel */
   --text: #ffffff;
-  --muted: #c4c4c4;
-  --lime: #c8f088;            /* sampled from the game's menus */
-  --lime-fill: #404038;       /* the selected item's fill, also sampled */
-  --lime-glow: rgba(200, 240, 136, 0.45);
-  --bad: #ff8a80;
+  --muted: #c6c2ee;
+  --accent: #4de8ff;          /* neon cyan */
+  --accent-2: #b46bff;        /* neon purple */
+  --accent-fill: #14294a;     /* the selected item's fill */
+  --accent-glow: rgba(77, 232, 255, 0.45);
+  --accent-2-glow: rgba(180, 107, 255, 0.45);
+  --neon: linear-gradient(90deg, var(--accent), var(--accent-2));
+  --rim: rgba(140, 120, 255, 0.28);   /* a panel's hairline rim */
+  --bad: #ff8a9a;
   --warn: #ffd36e;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --mono: ui-monospace, Menlo, Consolas, monospace;
@@ -32,7 +36,12 @@
 html, body { margin: 0; }
 body {
   min-height: 100vh;
-  background: radial-gradient(1200px 480px at 50% -160px, #2a2a2a, transparent 70%) no-repeat, var(--bg);
+  background:
+    radial-gradient(900px 600px at 0% -10%, rgba(180, 107, 255, 0.22), transparent 70%) no-repeat,
+    radial-gradient(900px 600px at 100% 0%, rgba(77, 232, 255, 0.14), transparent 70%) no-repeat,
+    radial-gradient(1200px 800px at 50% 120%, rgba(110, 60, 255, 0.16), transparent 70%) no-repeat,
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font: 400 16px/24px var(--font);
   -webkit-font-smoothing: antialiased;
@@ -40,7 +49,7 @@ body {
 h1, h2, h3, p, ul, dl, dd { margin: 0; }
 button, input, textarea { font: inherit; color: inherit; }
 [hidden] { display: none !important; }
-a { color: var(--lime); text-underline-offset: 4px; }
+a { color: var(--accent); text-underline-offset: 4px; }
 code { font: 14px/20px var(--mono); }
 
 /* the game's type: bold italic */
@@ -50,7 +59,7 @@ h1, h2, h3, .status, .btn, .play, kbd, .tab, .set-label, .opt, .val, summary, .p
 .hint { color: var(--muted); font-size: 14px; line-height: 20px; }
 
 /* keyboard focus: the game's selected-item glow; also in a dialog a controller works (padnav.ts) */
-:focus-visible, .dlg[data-pad] :focus { outline: 2px solid var(--lime); outline-offset: 2px; box-shadow: 0 0 12px var(--lime-glow); }
+:focus-visible, .dlg[data-pad] :focus { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 12px var(--accent-glow); }
 :focus:not(:focus-visible) { outline: none; }
 
 /* what fits the device (device.ts markTouch): keys where there is a keyboard, taps where a finger is the pointer */
@@ -78,8 +87,8 @@ html[data-touch] .key-only, html:not([data-touch]) .touch-only { display: none; 
 .row.end { justify-content: flex-end; }
 
 h1 { font-size: 32px; line-height: 40px; }
-h2 { font-size: 20px; line-height: 28px; color: var(--lime); margin-bottom: 16px; }
-h3 { font-size: 16px; line-height: 24px; color: var(--lime); margin: 32px 0 8px; }
+h2 { font-size: 20px; line-height: 28px; color: var(--accent); margin-bottom: 16px; }
+h3 { font-size: 16px; line-height: 24px; color: var(--accent); margin: 32px 0 8px; }
 .panel > h2 + .hint { margin: -12px 0 16px; }
 /* a heading with its buttons or a note at the right (Saves), under it on a narrow screen; the heading on the
  * buttons' 40 px line, the note on the h3's 24 px line, so both stay on the grid */
@@ -100,16 +109,16 @@ h3 { font-size: 16px; line-height: 24px; color: var(--lime); margin: 32px 0 8px;
 .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .stat { padding: 12px; border-radius: 8px; background: var(--field); color: var(--muted); font-size: 14px; line-height: 20px; }
 .stat span { display: block; }
-.stat b { display: block; color: var(--lime); font-size: 24px; line-height: 32px; font-style: italic; font-variant-numeric: tabular-nums; }
+.stat b { display: block; color: var(--accent); font-size: 24px; line-height: 32px; font-style: italic; font-variant-numeric: tabular-nums; }
 #players-note { margin-top: 12px; }
 
 /* the game's slider bar under its header, here the download */
-.bar { margin-top: 12px; height: 8px; border-radius: 4px; background: #585858; overflow: hidden; }
-.bar-fill { height: 100%; width: 0; border-radius: 4px; background: var(--lime); box-shadow: 0 0 8px var(--lime-glow); transition: width 0.2s linear; }
+.bar { margin-top: 12px; height: 8px; border-radius: 4px; background: #2a2550; overflow: hidden; }
+.bar-fill { height: 100%; width: 0; border-radius: 4px; background: var(--neon); box-shadow: 0 0 12px var(--accent-glow); transition: width 0.2s linear; }
 
 /* ------------------------------------------------------------- the hero */
 .status { font-size: 32px; line-height: 40px; }
-body[data-phase="ready"] .status { color: var(--lime); }
+body[data-phase="ready"] .status { color: var(--accent); }
 body[data-phase="error"] .status { color: var(--bad); }
 .status-sub { margin: 4px 0 24px; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* Play across the panel; Retry, Reload and Download log under it */
@@ -123,27 +132,27 @@ button, .file-btn { cursor: pointer; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   height: 40px; padding: 0 16px; border: 2px solid var(--edge); border-radius: 8px;
-  background: #080808; color: var(--text); font-size: 16px; line-height: 24px; white-space: nowrap; text-decoration: none;
+  background: rgba(10, 8, 24, 0.8); color: var(--text); font-size: 16px; line-height: 24px; white-space: nowrap; text-decoration: none;
 }
 /* a row's button wider than the row (a long name in another language on a phone) takes two lines, not the screen's
    edge: 6 + 24 + 6 inside the frame as before, 48 for two lines */
 .row > .btn { max-width: 100%; height: auto; min-height: 40px; padding-block: 6px; white-space: normal; text-align: center; }
-.btn:hover:not(:disabled) { border-color: var(--lime); }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
 .btn.selected, .play {
-  border: 2px solid var(--lime); background: var(--lime-fill); color: var(--lime); box-shadow: 0 0 12px var(--lime-glow);
+  border: 2px solid var(--accent); background: var(--accent-fill); color: var(--accent); box-shadow: 0 0 12px var(--accent-glow);
 }
 .btn.danger { border-color: var(--bad); color: var(--bad); }
 .btn:disabled, .file-btn[aria-disabled], .text-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .file-btn { position: relative; }
 .file-btn input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
-.file-btn:focus-within { outline: 2px solid var(--lime); outline-offset: 2px; box-shadow: 0 0 12px var(--lime-glow); }
+.file-btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 12px var(--accent-glow); }
 
 .play {
   display: inline-flex; align-items: center; gap: 16px;
   height: 48px; padding: 0 16px 0 24px; border-radius: 8px; font-size: 20px; line-height: 28px;
 }
-.play:hover:not(:disabled) { background: #4c5440; }
-.play:disabled { border-color: #4a4a4a; background: var(--field); color: var(--edge); box-shadow: none; cursor: not-allowed; }
+.play:hover:not(:disabled) { filter: brightness(1.08); }
+.play:disabled { border-color: #2f2a55; background: var(--field); color: var(--edge); box-shadow: none; cursor: not-allowed; }
 .play kbd { border-color: currentColor; background: none; color: inherit; }
 
 kbd {
@@ -170,23 +179,23 @@ kbd {
 .lang-pick select {
   appearance: none; height: 40px; padding: 0 36px 0 40px; border: 2px solid var(--edge); border-radius: 8px;
   background: linear-gradient(45deg, transparent 50%, var(--text) 50%) calc(100% - 20px) 50% / 6px 6px no-repeat,
-    linear-gradient(135deg, var(--text) 50%, transparent 50%) calc(100% - 14px) 50% / 6px 6px no-repeat, #080808;
+    linear-gradient(135deg, var(--text) 50%, transparent 50%) calc(100% - 14px) 50% / 6px 6px no-repeat, rgba(10, 8, 24, 0.8);
   color: var(--text); font: italic 700 16px/24px var(--font); cursor: pointer;
   field-sizing: content;                       /* as wide as the name shown (shell.ts syncPicker measures it in Firefox) */
 }
-.lang-pick select:hover:not(:disabled) { border-color: var(--lime); }
+.lang-pick select:hover:not(:disabled) { border-color: var(--accent); }
 .lang-pick select option { background: var(--field); color: var(--text); font-style: normal; }
 .lang-pick select:disabled { cursor: not-allowed; opacity: 0.5; }
 
 /* ------------------------------------------------------- the key sheet */
-/* its tabs (controls.ts): words on a divider, the open one lime and underlined */
+/* its tabs (controls.ts): words on a divider, the open one cyan and underlined */
 .tabs { display: flex; gap: 24px; margin: -4px 0 16px; box-shadow: inset 0 -1px var(--line); }
 .tab { height: 36px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 16px; line-height: 24px; }
 .tab:hover { color: var(--text); }
-.tab[aria-selected="true"] { color: var(--lime); box-shadow: inset 0 -3px var(--lime); }
+.tab[aria-selected="true"] { color: var(--accent); box-shadow: inset 0 -3px var(--accent); }
 /* the Friends & crews tab's dot, as a friend's envelope has it, while requests or friends' messages wait (shell.ts
  * friendsWaiting); its count is its text, for screen readers only */
-.tab-new { display: inline-block; width: 8px; height: 8px; margin: 2px 0 0 4px; border-radius: 50%; background: var(--lime); font-size: 0; vertical-align: top; }
+.tab-new { display: inline-block; width: 8px; height: 8px; margin: 2px 0 0 4px; border-radius: 50%; background: var(--accent); font-size: 0; vertical-align: top; }
 
 /* a panel's own tabs as its heading (tabs.ts: the big panel's, About's): the Controls sheet's tabs at a heading's
  * size, 44 px with its 28 px line (the panes start 88 px down, as under an h2).  Where one line is too narrow for them
@@ -199,7 +208,7 @@ kbd {
 .tabs.big[data-fit="rows"] > .tab { height: auto; min-height: 40px; padding: 8px 4px; box-shadow: inset 0 -1px var(--line); }
 /* a word longer than its third of a phone (Translations at 320 px): split where the language allows, else anywhere */
 .tabs.big[data-fit="rows"] > .tab, .stat span { hyphens: auto; overflow-wrap: anywhere; }
-.tabs.big[data-fit="rows"] > .tab[aria-selected="true"] { box-shadow: inset 0 -3px var(--lime); }
+.tabs.big[data-fit="rows"] > .tab[aria-selected="true"] { box-shadow: inset 0 -3px var(--accent); }
 .pane > :first-child { margin-top: 0; }
 #settings-note, #mods-note { margin-bottom: 16px; }
 #settings-lines h3 { margin-top: 32px; }          /* after the game data (the Game tab's end), not a pane's first */
@@ -215,27 +224,27 @@ kbd {
 .keys kbd { flex: none; }
 .tab-panel > .keys + .hint { margin-top: 16px; }
 .tab-panel > .hint + .set { margin-top: 8px; box-shadow: inset 0 1px var(--line); }
-/* this site's own controls (sitekeys.ts), the Controls tab's Site: the keys' list, each cap a button (its frame lime
+/* this site's own controls (sitekeys.ts), the Controls tab's Site: the keys' list, each cap a button (its frame cyan
  * while it waits for a press); a state line under a row (why a press was not taken, a key the game has) */
 .site-box > .hint { margin-bottom: 8px; }
 .site-keys .keycap { display: inline-flex; padding: 0; border: 0; border-radius: 4px; background: none; }
-.site-keys .keycap:hover:not(:disabled) kbd, .site-keys .keycap.selected kbd { border-color: var(--lime); }
-.site-keys .keycap.selected kbd { color: var(--lime); }
+.site-keys .keycap:hover:not(:disabled) kbd, .site-keys .keycap.selected kbd { border-color: var(--accent); }
+.site-keys .keycap.selected kbd { color: var(--accent); }
 .site-keys kbd.off { color: var(--muted); }
 .keys > div > .set-state { order: 2; flex-basis: 100%; margin-top: 0; }
 .site-box + .site-fixed > div:first-child { box-shadow: inset 0 1px var(--line); }
-/* the controller (controls.ts): the pad in line art, the buttons the game uses in lime, a dotted line from each
+/* the controller (controls.ts): the pad in line art, the buttons the game uses in cyan, a dotted line from each
  * label to its control, the button's name in a small key cap; the names as Xbox or PlayStation write them (the
  * sheet's data-fam).  --pad-bg: what is behind it (the hollow of the bumpers) */
 .pad { display: block; width: 100%; max-width: 448px; height: auto; margin: 0 auto; overflow: visible; --pad-bg: var(--panel); }
 .dlg .pad { --pad-bg: var(--frame); }
 .pad-ctl > * { fill: none; stroke: var(--edge); stroke-width: 1.25; }
-.pad-ctl > .on { stroke: var(--lime); }
+.pad-ctl > .on { stroke: var(--accent); }
 .pad-ctl > .pad-body { stroke: var(--muted); stroke-width: 1.5; }
 .pad-ctl > .pad-bumper { stroke-width: 10; stroke-linecap: round; }
 .pad-ctl > .pad-bumper-in { stroke: var(--pad-bg); stroke-width: 6.5; stroke-linecap: round; }
-.pad-line { fill: none; stroke: #6a6a6a; stroke-width: 1; stroke-dasharray: 2 2; }
-.pad-dot { fill: var(--lime); }
+.pad-line { fill: none; stroke: #5a5390; stroke-width: 1; stroke-dasharray: 2 2; }
+.pad-dot { fill: var(--accent); }
 .pad-label { font: italic 700 12px var(--font); fill: var(--text); }
 .pad-sub { font: 400 11px var(--font); fill: var(--muted); }
 .pad-chip rect { fill: var(--field); stroke: var(--edge); stroke-width: 1; }
@@ -277,7 +286,7 @@ kbd .glyph { display: inline-block; width: 14px; height: 14px; vertical-align: -
 .set-state.bad { color: var(--bad); }
 .set-state.env { color: var(--warn); }
 .set-control { grid-area: ctl; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
-.val { color: var(--lime); font-size: 14px; line-height: 20px; min-width: 24px; }
+.val { color: var(--accent); font-size: 14px; line-height: 20px; min-width: 24px; }
 .unit { color: var(--muted); font-size: 14px; line-height: 20px; }
 
 /* a choice: the game's value box, the chosen value selected; a value whose words take two lines makes its option (and
@@ -289,8 +298,8 @@ kbd .glyph { display: inline-block; width: 14px; height: 14px; vertical-align: -
 }
 .opt input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
 .opt:hover { color: var(--text); }
-.opt:has(input:checked) { border-color: var(--lime); background: var(--lime-fill); color: var(--lime); box-shadow: 0 0 8px var(--lime-glow); }
-.opt:has(input:focus-visible) { outline: 2px solid var(--lime); outline-offset: 2px; }
+.opt:has(input:checked) { border-color: var(--accent); background: var(--accent-fill); color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+.opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 .opt:has(input:disabled) { cursor: not-allowed; opacity: 0.5; }
 
 .switch {
@@ -299,14 +308,14 @@ kbd .glyph { display: inline-block; width: 14px; height: 14px; vertical-align: -
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .switch:checked {
-  border-color: var(--lime); box-shadow: 0 0 8px var(--lime-glow);
-  background: radial-gradient(circle at calc(100% - 14px) 50%, var(--lime) 8px, transparent 9px) no-repeat, var(--lime-fill);
+  border-color: var(--accent); box-shadow: 0 0 8px var(--accent-glow);
+  background: radial-gradient(circle at calc(100% - 14px) 50%, var(--accent) 8px, transparent 9px) no-repeat, var(--accent-fill);
 }
 .switch:disabled { cursor: not-allowed; opacity: 0.5; }
 
 .set input[type="number"], .set input[type="text"], .profiles input[type="text"], .dlg input[type="text"] {
   width: 128px; height: 40px; padding: 0 12px; border: 2px solid var(--edge); border-radius: 8px;
-  background: var(--field); color: var(--lime); font: italic 700 16px/24px var(--font);
+  background: var(--field); color: var(--accent); font: italic 700 16px/24px var(--font);
 }
 .set input[type="number"], .set input[type="text"] { width: 240px; }
 .set input::placeholder { color: var(--edge); font-weight: 400; }
@@ -323,9 +332,9 @@ kbd .glyph { display: inline-block; width: 14px; height: 14px; vertical-align: -
 /* a choice of many: the same value box, with a chevron */
 .set select {
   appearance: none; width: 240px; height: 40px; padding: 0 36px 0 12px; border: 2px solid var(--edge); border-radius: 8px;
-  background: linear-gradient(45deg, transparent 50%, var(--lime) 50%) calc(100% - 20px) 50% / 6px 6px no-repeat,
-    linear-gradient(135deg, var(--lime) 50%, transparent 50%) calc(100% - 14px) 50% / 6px 6px no-repeat, var(--field);
-  color: var(--lime); font: italic 700 16px/24px var(--font); cursor: pointer;
+  background: linear-gradient(45deg, transparent 50%, var(--accent) 50%) calc(100% - 20px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--accent) 50%, transparent 50%) calc(100% - 14px) 50% / 6px 6px no-repeat, var(--field);
+  color: var(--accent); font: italic 700 16px/24px var(--font); cursor: pointer;
 }
 .set select option { background: var(--field); color: var(--text); font-style: normal; }
 .set select:disabled { cursor: not-allowed; opacity: 0.5; }
@@ -337,11 +346,11 @@ kbd .glyph { display: inline-block; width: 14px; height: 14px; vertical-align: -
 }
 .listen::before {
   content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-35%, -50%);
-  border-style: solid; border-width: 8px 0 8px 13px; border-color: transparent transparent transparent var(--lime);
+  border-style: solid; border-width: 8px 0 8px 13px; border-color: transparent transparent transparent var(--accent);
 }
-.listen:hover { border-color: var(--lime); }
-.listen[aria-pressed="true"] { border-color: var(--lime); background: var(--lime-fill); box-shadow: 0 0 8px var(--lime-glow); }
-.listen[aria-pressed="true"]::before { width: 12px; height: 12px; border: 0; background: var(--lime); transform: translate(-50%, -50%); }
+.listen:hover { border-color: var(--accent); }
+.listen[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-fill); box-shadow: 0 0 8px var(--accent-glow); }
+.listen[aria-pressed="true"]::before { width: 12px; height: 12px; border: 0; background: var(--accent); transform: translate(-50%, -50%); }
 /* the picked flag beside Your flag, in Listen's box: /flags.png's 48x36 flags at 32x24, the picture, its size and
    place set by settings-ui.ts */
 .flag-pic {
@@ -355,7 +364,7 @@ kbd .glyph { display: inline-block; width: 14px; height: 14px; vertical-align: -
   height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none;
   color: var(--muted); font-size: 14px; line-height: 20px; text-decoration: underline; text-underline-offset: 4px;
 }
-.text-btn:hover:not(:disabled) { color: var(--lime); }
+.text-btn:hover:not(:disabled) { color: var(--accent); }
 /* the crews (settings-ui.ts crewControl): the row's label and help, and under them across the row one line of pills
  * that wraps: a chip per crew, its colour in the game (the dot, which opens the palette), its name (cut short with
  * "…", the whole of it in the chip's tooltip), how many are in free roam in it and Leave; then a value box with Join
@@ -384,10 +393,10 @@ kbd .glyph { display: inline-block; width: 14px; height: 14px; vertical-align: -
   display: flex; align-items: center; gap: 4px; height: 40px; max-width: 100%; padding: 4px;
   border-radius: 8px; background: var(--field);
 }
-/* the crew's colour, a button that opens its palette: a dot in a ring, the ring lime under the pointer or while open */
+/* the crew's colour, a button that opens its palette: a dot in a ring, the ring cyan under the pointer or while open */
 .crew-dot { flex: none; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
 .crew-dot::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--crew); box-shadow: 0 0 0 2px var(--field), 0 0 0 4px var(--line); }
-.crew-dot:hover::before, .crew-dot[aria-expanded="true"]::before { box-shadow: 0 0 0 2px var(--field), 0 0 0 4px var(--lime); }
+.crew-dot:hover::before, .crew-dot[aria-expanded="true"]::before { box-shadow: 0 0 0 2px var(--field), 0 0 0 4px var(--accent); }
 .crew-text { min-width: 0; display: flex; align-items: center; gap: 8px; padding-left: 2px; }
 .crew-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-style: italic; font-weight: 700; }
 .crew-count { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--muted); font-size: 14px; line-height: 20px; }
@@ -410,13 +419,13 @@ kbd .glyph { display: inline-block; width: 14px; height: 14px; vertical-align: -
   display: flex; align-items: center; flex: 0 1 240px; max-width: 100%; height: 40px; padding-right: 2px;
   border: 2px solid var(--edge); border-radius: 8px; background: var(--field);
 }
-.crew-add:focus-within { border-color: var(--lime); box-shadow: 0 0 12px var(--lime-glow); }
+.crew-add:focus-within { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
 .set .crew-add input[type="text"], .dlg .crew-add input[type="text"] {
   flex: 1; min-width: 0; width: auto; height: 100%; padding: 0 8px 0 12px; border: 0; background: none; outline: none; box-shadow: none;
 }
 .crew-add:has(input:disabled) { opacity: 0.5; }
 .crew-add input:disabled { cursor: not-allowed; }
-.crew-join:enabled { color: var(--lime); }
+.crew-join:enabled { color: var(--accent); }
 .crew-add .icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .set-note { font-size: 14px; line-height: 20px; color: var(--muted); }
 .set-note.warn { color: var(--warn); }
@@ -437,14 +446,14 @@ summary:hover { color: var(--text); }
 /* the Mods tab (mods-ui.ts): a section's hint 4 px under its heading; the rows as the settings', a row without a control
  * of its own (.set-plain) only its name and help.  The (i) right after a row's name, 8 px after its last word (its
  * focus ring clear of it) and on that word's line (.set-name-end: the two never part), as tall as the name's 24 px line
- * (the header's icon style: muted, lime when pointed at or focused).  It takes a touch 4 px around it as the icon
+ * (the header's icon style: muted, cyan when pointed at or focused).  It takes a touch 4 px around it as the icon
  * buttons' 32 px do (::before: no box of its own, so the line stays 24) */
 .set-plain { grid-template-columns: minmax(0, 1fr); grid-template-areas: "label" "help"; }
 .set-name-end { white-space: nowrap; }
 .set-name-end > .mod-about { position: relative; display: inline-grid; width: 24px; height: 24px; margin-left: 8px; vertical-align: top; border-radius: 50%; }
 .set-name-end > .mod-about::before { content: ''; position: absolute; inset: -4px; border-radius: 50%; }
 .icon-btn.mod-about svg { width: 24px; height: 24px; }
-.mod-about:focus-visible { color: var(--lime); }
+.mod-about:focus-visible { color: var(--accent); }
 .raw textarea {
   display: block; width: 100%; margin-bottom: 12px; padding: 8px 12px; border: 2px solid var(--edge); border-radius: 8px;
   background: var(--field); color: var(--text); font: 14px/20px var(--mono); resize: vertical; white-space: pre; overflow-x: auto;
@@ -454,7 +463,7 @@ summary:hover { color: var(--text); }
 .profiles { list-style: none; padding: 0; display: grid; gap: 4px; margin-bottom: 16px; }
 .profiles li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding: 8px 12px; border-radius: 8px; background: var(--field); }
 .profiles li.empty { color: var(--muted); font-size: 14px; line-height: 20px; }
-.profiles .name { color: var(--lime); margin-right: auto; }
+.profiles .name { color: var(--accent); margin-right: auto; }
 .profiles .meta { color: var(--muted); font-size: 14px; line-height: 24px; }   /* the name's line: on the grid beside it */
 .profiles .text-btn { padding: 0; }                 /* in line with the text above when wrapped */
 /* Rename and Delete as the friends list's icons: 32 px in a 40 px row, Delete dimmed until pointed at */
@@ -477,7 +486,7 @@ summary:hover { color: var(--text); }
   background: var(--field); overflow: hidden; aspect-ratio: 16 / 9; cursor: zoom-in;
 }
 .shot img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.shot:hover { border-color: var(--lime); box-shadow: 0 0 12px var(--lime-glow); }
+.shot:hover { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
 .shot .kind { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 .shot .kind { color: var(--edge); font: italic 700 14px/20px var(--font); }     /* a file the page cannot draw */
 /* cloud saves (vault-ui.ts): Turn on beside the heading, or when it last synced; the keyphrase in a value
@@ -490,23 +499,23 @@ summary:hover { color: var(--text); }
   display: flex; align-items: center; flex: 1; min-width: 0; height: 40px; padding-right: 2px;
   border: 2px solid var(--edge); border-radius: 8px; background: var(--field);
 }
-.keybox:focus-within { border-color: var(--lime); box-shadow: 0 0 12px var(--lime-glow); }
+.keybox:focus-within { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
 .keyfield { position: relative; flex: 1; min-width: 0; align-self: stretch; }
 .keyfield input, .keymask { padding: 0 10px; font: 14px/36px var(--mono); }
-.keyfield input { display: block; width: 100%; height: 100%; border: 0; background: none; color: var(--lime); outline: none; box-shadow: none; }
+.keyfield input { display: block; width: 100%; height: 100%; border: 0; background: none; color: var(--accent); outline: none; box-shadow: none; }
 .keyfield input::placeholder { color: var(--edge); font-family: var(--font); }
-.keymask { position: absolute; inset: 0; overflow: hidden; white-space: pre; color: var(--lime); pointer-events: none; }
-.keybox.masked input { color: transparent; caret-color: var(--lime); }
+.keymask { position: absolute; inset: 0; overflow: hidden; white-space: pre; color: var(--accent); pointer-events: none; }
+.keybox.masked input { color: transparent; caret-color: var(--accent); }
 .keybox:not(.masked) .keymask { display: none; }
 /* filled in by the browser's passwords (pwkeep.ts): the page cannot read it before the player acts, so the field draws
  * its own dots, in the box's colours rather than the browser's autofill tint */
-.keyfield input:is(:autofill, :-webkit-autofill) { -webkit-text-fill-color: var(--lime); color: var(--lime); box-shadow: inset 0 0 0 40px var(--field); filter: none; }
+.keyfield input:is(:autofill, :-webkit-autofill) { -webkit-text-fill-color: var(--accent); color: var(--accent); box-shadow: inset 0 0 0 40px var(--field); filter: none; }
 .keybox:has(input:is(:autofill, :-webkit-autofill)) .keymask { display: none; }
 .icon-btn {
   display: grid; place-items: center; flex: none; width: 32px; height: 32px; padding: 0;
   border: 0; border-radius: 6px; background: none; color: var(--muted);
 }
-.icon-btn:hover:not(:disabled) { color: var(--lime); }
+.icon-btn:hover:not(:disabled) { color: var(--accent); }
 .icon-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .eye .off, .eye[aria-pressed="true"] .on { display: none; }
 .eye[aria-pressed="true"] .off { display: block; }
@@ -528,10 +537,10 @@ summary:hover { color: var(--text); }
  * replaced, with Put back */
 .vault-sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 14px; line-height: 20px; }
 .vault-sides li { display: grid; grid-template-columns: 1fr auto; align-content: start; gap: 2px 8px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 8px; }
-.vault-sides li.newer { border-color: var(--lime); }
+.vault-sides li.newer { border-color: var(--accent); }
 .vault-sides b { grid-row: 1; min-width: 0; color: var(--muted); font-weight: 400; }
 .vault-sides span { grid-row: 2; grid-column: 1 / -1; min-width: 0; }
-.vault-sides em { grid-row: 1; grid-column: 2; color: var(--lime); font-style: normal; font-weight: 700; }
+.vault-sides em { grid-row: 1; grid-column: 2; color: var(--accent); font-style: normal; font-weight: 700; }
 .dlg ul.vault-sides { margin: 0 0 16px; padding: 0; color: inherit; }
 .dlg .vault-sides li { row-gap: 4px; }        /* 68 px: on the dialog's 4 px grid */
 .dlg p.warn { color: var(--warn); }
@@ -541,19 +550,19 @@ summary:hover { color: var(--text); }
  * dashes; Copy and Download keyphrase as text under it */
 .keyphrase {
   padding: 6px 10px; border: 2px solid var(--edge); border-radius: 8px; background: var(--field);
-  color: var(--lime); font: 14px/24px var(--mono); user-select: all;
+  color: var(--accent); font: 14px/24px var(--mono); user-select: all;
 }
 .dlg p.keyphrase { margin-bottom: 4px; }
 /* claimed names (claim-ui.ts): the line under Your name in its state's colour, Cloudflare's check under it; Play's
  * check stays out of sight (and its backdrop clear) unless it wants a click */
-.set-state.ok { color: var(--lime); }
+.set-state.ok { color: var(--accent); }
 .set-state.free { color: var(--muted); }
 .set-state .text-btn { padding: 0; height: auto; }
 .set .claim-check { grid-column: 1 / -1; margin-top: 8px; }
 .dlg .claim-check { margin-bottom: 16px; }
 .claim-line[data-state="bad"] { color: var(--bad); }
 .claim-line[data-state="env"] { color: var(--warn); }
-.claim-line[data-state="ok"] { color: var(--lime); }
+.claim-line[data-state="ok"] { color: var(--accent); }
 #claim-check.quiet { visibility: hidden; }
 #claim-check.quiet::backdrop { background: transparent; }
 .keyphrase-do { gap: 4px 16px; margin-bottom: 12px; }
@@ -590,9 +599,9 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
   background: rgba(0, 0, 0, 0.4); color: rgba(255, 255, 255, 0.72); -webkit-tap-highlight-color: transparent;
 }
 .stage-menu svg { display: block; width: calc(24px * var(--ts)); height: calc(24px * var(--ts)); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.stage-menu:active { background: rgba(0, 0, 0, 0.72); color: var(--lime); }
+.stage-menu:active { background: rgba(0, 0, 0, 0.72); color: var(--accent); }
 /* touch controls (touch.ts) while the player drives: see-through, lighter than the menu's button (which, with the
- * Steering switch, keeps the darker fill so both stay easy to find), back to full and lime while pressed or on (lit).
+ * Steering switch, keeps the darker fill so both stay easy to find), back to full and cyan while pressed or on (lit).
  * The menus' arrows and OK/Back, in the black bars beside the menus, keep the darker fill.  The small round ones in a row after the menu's button (the mode button and tilt's straight-ahead top
  * right), the steering's group bottom left, the pedals' bottom right; free roam adds a row's end and Start.
  * The two groups are placed from the inline start (the steering's side) and end (the pedals'): steering on the right
@@ -616,11 +625,11 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
 }
 .tc svg { width: calc(24px * var(--ts)); height: calc(24px * var(--ts)); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .tc svg .fill { fill: currentColor; stroke: none; }
-.tc.on { background: rgba(0, 0, 0, 0.72); color: var(--lime); }
+.tc.on { background: rgba(0, 0, 0, 0.72); color: var(--accent); }
 /* driving: black 20 % and white 55 % (the Steering switch keeps the 40 % and 72 % above), pressed as above */
 .touch[data-mode="drive"] .tc:not([data-ctl="mode"]) { background: rgba(0, 0, 0, 0.2); color: rgba(255, 255, 255, 0.55); }
-.touch[data-mode="drive"] .tc.lit:not([data-ctl="mode"]) { color: var(--lime); }
-.touch[data-mode="drive"] .tc.on:not([data-ctl="mode"]) { background: rgba(0, 0, 0, 0.72); color: var(--lime); }
+.touch[data-mode="drive"] .tc.lit:not([data-ctl="mode"]) { color: var(--accent); }
+.touch[data-mode="drive"] .tc.on:not([data-ctl="mode"]) { background: rgba(0, 0, 0, 0.72); color: var(--accent); }
 .tc.small { top: var(--t); width: calc(48px * var(--ts)); height: calc(48px * var(--ts)); border-radius: 50%; }
 .tc.big { bottom: var(--b); border-radius: calc(16px * var(--ts)); }
 .tc.big svg { width: calc(32px * var(--ts)); height: calc(32px * var(--ts)); }
@@ -649,8 +658,8 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
 .touch[data-hyd] .tc[data-ctl="chat"] { left: calc(var(--l) + 616px * var(--ts)); }
 .touch:not([data-roam]) .tc[data-ctl="lift"] { left: calc(var(--l) + 224px * var(--ts)); }
 .touch:not([data-roam]) .tc[data-ctl="bounce"] { left: calc(var(--l) + 280px * var(--ts)); }
-/* drift mode on, Pressurize or Bounce on: the button lime, with a ring */
-.tc.lit { color: var(--lime); box-shadow: inset 0 0 0 calc(2px * var(--ts)) var(--lime); }
+/* drift mode on, Pressurize or Bounce on: the button cyan, with a ring */
+.tc.lit { color: var(--accent); box-shadow: inset 0 0 0 calc(2px * var(--ts)) var(--accent); }
 .tc[data-ctl="mode"] { right: var(--r); }
 .tc[data-ctl="center"] { right: calc(var(--r) + 56px * var(--ts)); }
 .tc[data-ctl="start"] { inset-inline-start: var(--steer); bottom: calc(var(--b) + 128px * var(--ts)); }
@@ -746,7 +755,7 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
 .type { position: absolute; z-index: 4; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); margin: 0; }
 .type input {
   width: 240px; height: 48px; padding: 0 12px; border: 2px solid var(--edge); border-radius: 8px;
-  background: var(--field); color: var(--lime); font: italic 700 16px/24px var(--font);
+  background: var(--field); color: var(--accent); font: italic 700 16px/24px var(--font);
   -webkit-user-select: text; user-select: text; touch-action: manipulation;
 }
 /* the notes on the game, and the frame-rate counter, go under the row of small buttons */
@@ -807,11 +816,11 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
   html[data-touch] .touch[data-nitro][data-steering="tilt"] .tc.round[data-ctl="hb"] { inset-inline-end: calc(var(--pedal) + 100px * var(--ts)); }
 }
 .stick-base.on { border-color: rgba(200, 240, 136, 0.5); }
-.stick-base.on .stick-knob { border-color: var(--lime); background: rgba(0, 0, 0, 0.72); }
+.stick-base.on .stick-knob { border-color: var(--accent); background: rgba(0, 0, 0, 0.72); }
 .hud-fps {
   position: absolute; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); z-index: 2; pointer-events: none; min-width: 80px;
   padding: 4px 12px; border-radius: 8px; background: rgba(0, 0, 0, 0.64);
-  color: var(--lime); font-size: 20px; line-height: 28px; font-variant-numeric: tabular-nums; text-align: right;
+  color: var(--accent); font-size: 20px; line-height: 28px; font-variant-numeric: tabular-nums; text-align: right;
 }
 .hud-fps small { margin-left: 4px; color: var(--muted); font-size: 12px; line-height: 16px; }
 .hud-fps dl { display: grid; grid-template-columns: auto auto; gap: 0 12px; margin-top: 4px; font: 400 12px/16px var(--font); color: var(--text); }
@@ -836,7 +845,7 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
   background: rgba(13, 13, 13, 0.78); font: 400 max(13px, calc(11 * var(--u))) / 1.4 var(--font); color: var(--text);
   pointer-events: none; white-space: pre-line;
 }
-.toast b { font-weight: 700; color: var(--lime); }
+.toast b { font-weight: 700; color: var(--accent); }
 .toast kbd { margin-right: 0.5em; }   /* (a key and what it does, as the cards' .ov-act) */
 /* the game's pause menu: what opens the page's menu, under the game's panel (pausehint.ts places it), as a toast */
 /* the site's address under the title screen's copyright (titlemark.ts): drawn there, placed and faded by the game's status */
@@ -847,15 +856,15 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
   padding: calc(10 * var(--u)) calc(12 * var(--u)); border: 0; border-radius: 4px; background: rgba(13, 13, 13, 0.78);
   color: var(--text); font: 400 max(13px, calc(11 * var(--u))) / 1.4 var(--font); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.pause-hint:active { color: var(--lime); }
+.pause-hint:active { color: var(--accent); }
 .pause-hint kbd { margin-right: 0.5em; }
 .pause-hint-list { color: var(--muted); }
 .pause-hint-list::before { content: " · "; }
 /* free roam's friends (friends.ts): the line while front bumpers touch, and a friend's invite over it, at the top of
  * the column of notes (.toasts), in their box; the key cap first; one that offers nothing (a request sent, or why not)
  * grey and no button.  On the start page (and in the page menu's Friends) a line a friend: the name, where
- * it plays after it in small text (lime while it plays; the name dimmed while it does not), the icons at its end
- * (Message an envelope, lime with a dot while messages wait to be read: messages.ts; Remove a grey can, red under the
+ * it plays after it in small text (cyan while it plays; the name dimmed while it does not), the icons at its end
+ * (Message an envelope, cyan with a dot while messages wait to be read: messages.ts; Remove a grey can, red under the
  * pointer); the friend's own line under it */
 .friend-prompt {   /* (the cards' box, face and size, .ov-card; --u from the stage) */
   order: -1; max-width: max(560px, calc(400 * var(--u)));
@@ -863,42 +872,42 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
   background: rgba(13, 13, 13, 0.78); font: 400 max(13px, calc(11 * var(--u))) / 1.4 var(--font); color: var(--text); text-align: left;
   pointer-events: none; -webkit-tap-highlight-color: transparent;
 }
-.friend-prompt b { font-weight: 700; color: var(--lime); }
+.friend-prompt b { font-weight: 700; color: var(--accent); }
 .friend-prompt.offer { pointer-events: auto; cursor: pointer; }
-.friend-prompt.offer:active { color: var(--lime); }
+.friend-prompt.offer:active { color: var(--accent); }
 .friend-prompt:not(.offer) { color: var(--muted); }
 .friend-prompt.invite { order: -2; }
-/* what has to be answered in its time: a border round the box, lime for an offer (a friend's invite, a friend to add or
+/* what has to be answered in its time: a border round the box, cyan for an offer (a friend's invite, a friend to add or
  * a friend's request: shell.ts toast 'hot'), amber for a kick or its warning (away.ts, shell.ts netRemoved) */
-.toast.hot, .friend-prompt.offer { box-shadow: inset 0 0 0 max(2px, calc(1.5 * var(--u))) var(--lime); }
+.toast.hot, .friend-prompt.offer { box-shadow: inset 0 0 0 max(2px, calc(1.5 * var(--u))) var(--accent); }
 .toast.away { box-shadow: inset 0 0 0 max(2px, calc(1.5 * var(--u))) var(--warn); }
 .fl, .dlg ul.fl { list-style: none; margin: 0; padding: 0; color: inherit; font-size: inherit; line-height: inherit; }
 .fl li { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; min-height: 40px; }
 .fl li + li { box-shadow: inset 0 1px var(--line); }
 .fl-name { flex: 1; min-width: 0; font-style: italic; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fl-st { margin-left: 8px; color: var(--muted); font: 400 14px/20px var(--font); }
-.fl-st.ok { color: var(--lime); }
+.fl-st.ok { color: var(--accent); }
 .fl li.off .fl-name { color: var(--muted); }
 .fl-act { flex: none; display: flex; gap: 2px; margin-left: auto; }
-.fl .fl-yes { color: var(--lime); }
+.fl .fl-yes { color: var(--accent); }
 .fl .fl-del { color: var(--edge); opacity: 0.6; }
 .fl .fl-del:is(:hover, :focus-visible) { color: var(--bad); opacity: 1; }
 .fl .fl-msg { position: relative; }
-.fl .fl-msg.unread { color: var(--lime); }
+.fl .fl-msg.unread { color: var(--accent); }
 .fl .fl-msg.unread::after {
-  content: ""; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--lime);
+  content: ""; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
   box-shadow: 0 0 0 2px var(--panel);
 }
 .fl .fl-discord svg { fill: currentColor; stroke: none; }   /* (Discord's mark is a filled shape, the others are lines) */
 #friends > .set { box-shadow: inset 0 1px var(--line); }   /* under the Crews row, as the rows of a group */
 /* a friend's crew invite (friends.ts CrewInvites): the player's crews under the friend's line, no line between them,
- * each a chip as the Crews row's (its dot and name) that is a button, its dot ringed in lime under the pointer */
+ * each a chip as the Crews row's (its dot and name) that is a button, its dot ringed in cyan under the pointer */
 .fl li.fl-pick { box-shadow: none; gap: 8px; padding-bottom: 8px; }
 .fl-pick .fl-st { margin-left: 0; line-height: 24px; }   /* (centred by the 40 px chips: on the 4 px grid) */
 .crew-pick { border: 0; padding-right: 12px; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .crew-pick .crew-dot { pointer-events: none; }
-.crew-pick:is(:hover, :focus-visible) .crew-dot::before { box-shadow: 0 0 0 2px var(--field), 0 0 0 4px var(--lime); }
-.fl .fl-crew[aria-expanded="true"] { color: var(--lime); }
+.crew-pick:is(:hover, :focus-visible) .crew-dot::before { box-shadow: 0 0 0 2px var(--field), 0 0 0 4px var(--accent); }
+.fl .fl-crew[aria-expanded="true"] { color: var(--accent); }
 /* a request by name (friends.ts addField): the Crews row's box (its field's rules) under the list, a setting's 240 px
  * (the row's width on a phone), what the last one did under it */
 .fl-add, .fl-find { flex: none; width: 240px; }
@@ -931,7 +940,7 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
 /* free roam's log on the left between the game's SMS icon and its radar (shell.ts placeNotices: the place, and --u,
  * one HUD unit), in the cards' face and size (.ov-card, no card behind it: a shadow under the text).  Every line alike
  * (shell.ts roamLine): an icon in a column of its own, then the text, an even gap between lines; a friend coming and
- * going (no icon) dim, a name in lime; newest at the bottom, each fading out after 5 s (when notice() removes it) */
+ * going (no icon) dim, a name in cyan; newest at the bottom, each fading out after 5 s (when notice() removes it) */
 .notices {
   --u: 1px;
   position: absolute; left: 16px; top: 40%; z-index: 3; height: calc(88 * var(--u)); max-width: calc(240 * var(--u));
@@ -945,11 +954,11 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
 .notices .ic svg { width: 0.9em; height: 0.9em; }
 .notices .tx { min-width: 0; overflow-wrap: anywhere; }
 .notices div.quiet { color: var(--muted); }
-.notices b { font-weight: 700; color: var(--lime); }
+.notices b { font-weight: 700; color: var(--accent); }
 @keyframes notice-fade { 0% { opacity: 0; } 4%, 84% { opacity: 1; } 100% { opacity: 0; } }
 /* free roam's drift mode (drift.ts): the drift event's panel (HUD_Drift: Best, the multiplier and the points its next
  * level needs, Total) under the game's Bank panel and as wide, sized with the HUD (--u, one HUD unit), its rows, type
- * and colours as the drift event's: grey labels with their letters apart, the best in lime, the multiplier in big
+ * and colours as the drift event's: grey labels with their letters apart, the best in cyan, the multiplier in big
  * green italics, its points in amber, Total in green */
 .drift-panel {
   --u: 1px;
@@ -963,7 +972,7 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
 }
 .drift-panel > div:first-child { border-radius: calc(5 * var(--u)) calc(5 * var(--u)) 0 0; }
 .drift-panel > div:last-child { border-radius: 0 0 calc(5 * var(--u)) calc(5 * var(--u)); }
-.drift-panel b { font-weight: 400; letter-spacing: 0; color: var(--lime); font-variant-numeric: tabular-nums; }
+.drift-panel b { font-weight: 400; letter-spacing: 0; color: var(--accent); font-variant-numeric: tabular-nums; }
 .drift-x { font: italic 700 calc(24 * var(--u)) / 1 var(--font); letter-spacing: 0; color: #30cd30; }
 .drift-gain { display: flex; flex-direction: column; align-items: flex-end; gap: calc(5 * var(--u)); }
 .drift-gain b { color: #d8a020; }
@@ -976,13 +985,13 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
 .drift-board .drift-who span { flex: 1; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.04em; color: #e8e8e8; }
 .drift-board .drift-who.me span { color: #30cd30; }
 /* the DRIFT counter (drift.ts): the drift event's, centred under free roam's arrow, the label over the points in big
- * italics: lime while a drift counts and when it banks, red (the drift event's) when a wall loses it; a banked or lost
+ * italics: cyan while a drift counts and when it banks, red (the drift event's) when a wall loses it; a banked or lost
  * one fades out */
 .drift-pop {
   --u: 1px;
   position: absolute; z-index: 2; translate: -50% 0; pointer-events: none;
   display: flex; flex-direction: column; align-items: center; gap: calc(3 * var(--u));
-  color: var(--lime); white-space: nowrap;
+  color: var(--accent); white-space: nowrap;
 }
 .drift-pop.banked { animation: drift-pop 2.4s linear both; }
 .drift-pop.lost { color: #ce3030; animation: drift-pop 1.6s linear both; }
@@ -993,16 +1002,16 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
  * message (msgLine, messages.ts): a speech balloon or an envelope, 8 s; a message's note after it dim; on a touch
  * screen a tap on a friend's answers it; "I Write back" under the newest, the cards' key cap */
 .notices div.chat { animation-duration: 8s; }
-.notices .ic svg { fill: var(--lime); }
+.notices .ic svg { fill: var(--accent); }
 .notices .msg i { font-style: normal; color: var(--muted); }
 .notices div.msg.tap { pointer-events: auto; cursor: pointer; }
 .notices div.msg-hint { color: var(--muted); }
 .notices .msg-hint kbd { margin-right: 0.5em; text-shadow: none; }   /* (the cards' key cap, .ov-act kbd) */
 /* a crew's count as free roam starts (shell.ts crewCountLine): its dot and name in the crew's colour */
 .notices div.crew-in .ic svg { fill: var(--crew); }
-.notices div.world-in .ic svg { fill: none; stroke: var(--lime); stroke-width: 2.4; }
+.notices div.world-in .ic svg { fill: none; stroke: var(--accent); stroke-width: 2.4; }
 .notices div.crew-in b { color: var(--crew); }
-/* free roam: quick chat over the cars (quickchat.ts): the phrase in lime after a speech balloon, over the name the
+/* free roam: quick chat over the cars (quickchat.ts): the phrase in cyan after a speech balloon, over the name the
  * game draws, sized with the HUD (--u, 16 units at the nearest) and scaled with the name by the line's transform
  * (quickchat.ts LINE_MIN: never below 70 %), which follows the game's marks every frame; it pops up, and fades out
  * at its end.  A long one (Granny shifting...) wraps past 20 em, centred, the balloon before its first line */
@@ -1022,19 +1031,19 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
   padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0, 0, 0, 0.78);
   font: 400 14px/20px var(--font); color: var(--text);
 }
-.ph-title { font-style: italic; font-weight: 700; text-transform: uppercase; color: var(--lime); }
+.ph-title { font-style: italic; font-weight: 700; text-transform: uppercase; color: var(--accent); }
 /* its tabs (Camera, Picture, Scene, Controls): the start page's underline tabs at the panel's size, each with its pane */
 .ph-tabs { display: flex; gap: 12px; box-shadow: inset 0 -1px var(--line); }
 .ph-tab { flex: none; height: 32px; padding: 0; border: 0; background: none; color: var(--muted); font: italic 700 14px/20px var(--font); cursor: pointer; }
 .ph-tab:hover { color: var(--text); }
-.ph-tab[aria-selected="true"] { color: var(--lime); box-shadow: inset 0 -3px var(--lime); }
+.ph-tab[aria-selected="true"] { color: var(--accent); box-shadow: inset 0 -3px var(--accent); }
 /* where a language's words do not fit on the line: smaller, then two rows of two, each on its own divider (photo.ts
  * fitTabs, as the start page's tabs.ts) */
 .ph-tabs[data-fit="small"] { gap: 8px; }
 .ph-tabs[data-fit="small"] > .ph-tab { font-size: 12px; }
 .ph-tabs[data-fit="rows"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; box-shadow: none; }
 .ph-tabs[data-fit="rows"] > .ph-tab { box-shadow: inset 0 -1px var(--line); text-align: left; overflow-wrap: anywhere; }
-.ph-tabs[data-fit="rows"] > .ph-tab[aria-selected="true"] { box-shadow: inset 0 -3px var(--lime); }
+.ph-tabs[data-fit="rows"] > .ph-tab[aria-selected="true"] { box-shadow: inset 0 -3px var(--accent); }
 .ph-pane { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-content: start; }
 .ph-pane[hidden], .ph-check[hidden] { display: none; }
 .ph-pane > .ph-mode { justify-self: start; }
@@ -1047,40 +1056,40 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
   padding: 4px 8px; border: 1px solid var(--edge); border-radius: 6px; background: var(--field);
   font-style: italic; font-weight: 700; cursor: pointer;
 }
-.ph-row3 button:hover:not(:disabled) { border-color: var(--lime); }
+.ph-row3 button:hover:not(:disabled) { border-color: var(--accent); }
 .ph-row3 button:disabled { opacity: 0.4; cursor: default; }
 .ph-note { margin-top: -6px; color: var(--muted); font-size: 12px; line-height: 18px; }
 .ph-grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .ph-mode { display: inline-flex; border: 1px solid var(--edge); border-radius: 6px; overflow: hidden; }
 .ph-mode button { padding: 2px 10px; border: 0; background: none; color: var(--muted); cursor: pointer; }
-.ph-mode button.on { background: var(--lime-fill); color: var(--lime); }
+.ph-mode button.on { background: var(--accent-fill); color: var(--accent); }
 /* a slider or a list: its name left, the control right (as wide as the lists) */
 .ph-slider { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); }
-.ph-slider input { flex: 0 1 136px; min-width: 96px; margin: 0; accent-color: var(--lime); }
+.ph-slider input { flex: 0 1 136px; min-width: 96px; margin: 0; accent-color: var(--accent); }
 .ph-slider > span, .ph-pick > span { min-width: 0; overflow-wrap: anywhere; }
 .ph-slider:has(input:disabled), .ph-pick:has(select:disabled), .ph-check:has(input:disabled) { opacity: 0.4; }
 /* a list in the mode buttons' frame */
 .ph-pick { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); }
 .ph-pick select {
   appearance: none; flex: 0 1 136px; min-width: 96px; height: 28px; padding: 0 24px 0 8px; border: 1px solid var(--edge); border-radius: 6px;
-  background: linear-gradient(45deg, transparent 50%, var(--lime) 50%) calc(100% - 14px) 50% / 5px 5px no-repeat,
-    linear-gradient(135deg, var(--lime) 50%, transparent 50%) calc(100% - 9px) 50% / 5px 5px no-repeat, var(--field);
+  background: linear-gradient(45deg, transparent 50%, var(--accent) 50%) calc(100% - 14px) 50% / 5px 5px no-repeat,
+    linear-gradient(135deg, var(--accent) 50%, transparent 50%) calc(100% - 9px) 50% / 5px 5px no-repeat, var(--field);
   color: var(--text); font: 400 14px/20px var(--font); cursor: pointer;
 }
-.ph-pick select:hover { border-color: var(--lime); }
+.ph-pick select:hover { border-color: var(--accent); }
 .ph-pick select option { background: var(--field); color: var(--text); }
 .ph-check { display: flex; align-items: center; gap: 8px; color: var(--muted); cursor: pointer; }
-.ph-check input { margin: 0; accent-color: var(--lime); }
+.ph-check input { margin: 0; accent-color: var(--accent); }
 .ph-buttons { display: flex; flex-direction: column; gap: 8px; }
 .ph-buttons button {
   padding: 6px 16px; border: 1px solid var(--edge); border-radius: 6px; background: var(--field);
   font-style: italic; font-weight: 700; cursor: pointer;
 }
-.ph-buttons button:hover { border-color: var(--lime); }
+.ph-buttons button:hover { border-color: var(--accent); }
 /* Take photo fills as the still picture's frames come (photo.ts --ph-p, 0 .. 1) */
 .ph-buttons .ph-shoot {
-  order: -1; padding: 9px 16px; border-color: var(--lime); color: var(--lime);
-  background: linear-gradient(to right, var(--lime-fill) calc(var(--ph-p, 0) * 100%), var(--field) 0);
+  order: -1; padding: 9px 16px; border-color: var(--accent); color: var(--accent);
+  background: linear-gradient(to right, var(--accent-fill) calc(var(--ph-p, 0) * 100%), var(--field) 0);
 }
 .ph-hints {
   display: flex; flex-direction: column; gap: 3px; padding-top: 8px; border-top: 1px solid var(--line);
@@ -1101,7 +1110,7 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
 .qc-line.out { opacity: 0; }
 .qc-b {
   display: block; max-width: 20em; text-align: center; transform-origin: 50% 100%; animation: qc-pop 0.22s ease-out both;
-  font: italic 700 max(14px, calc(16 * var(--u))) / 1 var(--font); color: var(--lime);
+  font: italic 700 max(14px, calc(16 * var(--u))) / 1 var(--font); color: var(--accent);
   text-shadow: 0 0 2px #000, 0 1px 3px #000, 0 0 calc(5 * var(--u)) rgba(0, 0, 0, 0.6);
 }
 .qc-b svg {
@@ -1110,9 +1119,9 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
 }
 @keyframes qc-pop { 0% { opacity: 0; transform: translateY(30%) scale(0.6); } 70% { opacity: 1; transform: scale(1.06); } 100% { transform: none; } }
 /* the countdown, a special phrase (quickchat.ts): its stopwatch in the picker and over the car, dimmed in a race (it
- * does nothing there); its big number for the players near the one who said it, the chat lines' lime and shadow, in
+ * does nothing there); its big number for the players near the one who said it, the chat lines' cyan and shadow, in
  * the picture's middle a quarter down (placed by the page), a pop at each */
-svg.qc-watch { width: 1em; height: 1em; flex: none; margin-right: 0.3em; vertical-align: -0.14em; fill: none; stroke: var(--lime); stroke-width: 1.6; stroke-linecap: round; }
+svg.qc-watch { width: 1em; height: 1em; flex: none; margin-right: 0.3em; vertical-align: -0.14em; fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; }
 .qc-b svg.qc-watch { width: 0.95em; height: 0.95em; margin-right: calc(2.5 * var(--u)); fill: none; stroke: currentColor; }
 .qc-off { color: var(--muted); }
 .qc-off svg.qc-watch { stroke: var(--muted); }
@@ -1120,7 +1129,7 @@ svg.qc-watch { width: 1em; height: 1em; flex: none; margin-right: 0.3em; vertica
 .qc-count.out { opacity: 0; }
 .qc-count span {
   display: block; white-space: nowrap; transform-origin: 50% 50%; animation: qc-pop 0.22s ease-out both;
-  font: italic 700 calc(80 * var(--u)) / 1 var(--font); color: var(--lime);
+  font: italic 700 calc(80 * var(--u)) / 1 var(--font); color: var(--accent);
   text-shadow: 0 0 2px #000, 0 2px 6px #000, 0 0 calc(14 * var(--u)) rgba(0, 0, 0, 0.6);
 }
 /* quick chat's picker (quickchat.ts), a card (.ov-card) on the left in the notices' place (they step aside while it is
@@ -1139,7 +1148,7 @@ svg.qc-watch { width: 1em; height: 1em; flex: none; margin-right: 0.3em; vertica
   min-height: 40px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: var(--text);
   font: 400 14px/1.2 var(--font); text-align: left; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
-.qc-say:active { border-color: var(--lime); color: var(--lime); }
+.qc-say:active { border-color: var(--accent); color: var(--accent); }
 .qc-picker .qc-msg { grid-column: 1 / -1; text-align: center; }
 /* messages between friends (messages.ts): the card is quick chat's picker, in its place (the log steps aside as for the
  * picker), taking clicks: the friends to pick, where each plays on the right; or the message answered, a field for the
@@ -1147,17 +1156,17 @@ svg.qc-watch { width: 1em; height: 1em; flex: none; margin-right: 0.3em; vertica
  * tap */
 .msg-card { pointer-events: auto; outline: none; }
 .msg-quote { color: var(--muted); overflow-wrap: anywhere; }
-.msg-quote b { color: var(--lime); }
+.msg-quote b { color: var(--accent); }
 .msg-input {
   display: block; box-sizing: border-box; width: 100%; padding: 0.3em 0.5em; border: 1px solid var(--edge); border-radius: 3px;
   background: var(--field); color: var(--text); font: inherit; outline: none;
 }
-.msg-input:focus { border-color: var(--lime); }
+.msg-input:focus { border-color: var(--accent); }
 .msg-foot { display: flex; justify-content: space-between; align-items: center; gap: 0.6em; }
 .msg-left { font-variant-numeric: tabular-nums; }
 .msg-friend { cursor: pointer; }
 .msg-where { margin-left: auto; font-size: 0.85em; color: var(--muted); }
-.msg-where.ok { color: var(--lime); }
+.msg-where.ok { color: var(--accent); }
 .msg-card[data-mode="touch"] { width: min(440px, calc(100% - 32px)); padding: 12px 16px; font-size: 16px; }
 .msg-card[data-mode="touch"] .msg-friend {
   display: flex; width: 100%; min-height: 40px; align-items: center; gap: 0.5em; border: 0;
@@ -1179,12 +1188,12 @@ svg.qc-watch { width: 1em; height: 1em; flex: none; margin-right: 0.3em; vertica
 .ov-block:first-child { padding-top: 0; }
 .ov-block:last-child { padding-bottom: 0; }
 .ov-block + .ov-block { border-top: 1px solid var(--line); }
-.ov-title { font-weight: 700; color: var(--lime); }
+.ov-title { font-weight: 700; color: var(--accent); }
 .ov-small { font-size: 0.85em; color: var(--muted); }
 /* what is going on: waiting (dim), about to close (warn), starting (go) */
 .ov-dim { color: var(--muted); }
 .ov-warn { color: var(--warn); }
-.ov-go { font-weight: 700; color: var(--lime); }
+.ov-go { font-weight: 700; color: var(--accent); }
 /* a key and what it does */
 .ov-act { display: flex; gap: 0.5em; align-items: center; }
 :is(.ov-act, .notices, .toast, .pause-hint, .friend-prompt) kbd {
@@ -1194,7 +1203,7 @@ svg.qc-watch { width: 1em; height: 1em; flex: none; margin-right: 0.3em; vertica
 /* the card's own buttons (with a click or a tap): the card lets clicks through, these take them */
 .ov-act.tap { pointer-events: auto; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .ov-act.tap:hover > span { text-decoration: underline; }
-.ov-act.tap:active { color: var(--lime); }
+.ov-act.tap:active { color: var(--accent); }
 html[data-touch] .ov-act.tap { min-height: 32px; }
 /* free roam: the race lobby (lobby.ts), the card on the right under the game's Bank box, a little wider than it: the
  * race, its members, the host's settings, this lobby or the next.  Over the trip to the race and back a cover of the
@@ -1205,18 +1214,18 @@ html[data-touch] .ov-act.tap { min-height: 32px; }
 .lobby-race::first-letter { text-transform: uppercase; }
 .lobby-race { display: inline-block; }
 .lobby-count { font-variant-numeric: tabular-nums; color: var(--muted); }
-/* the players, the host first: friends and crew-mates in lime, ours bold (lobby.ts players) */
+/* the players, the host first: friends and crew-mates in cyan, ours bold (lobby.ts players) */
 .lobby-players { list-style: none; margin: 0; padding: 0; }
 .lobby-players li { display: flex; gap: 0.5em; align-items: baseline; }
 .lobby-pname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lobby-players li.me .lobby-pname { font-weight: 700; }
-.lobby-players li.mate .lobby-pname { color: var(--lime); }
+.lobby-players li.mate .lobby-pname { color: var(--accent); }
 .lobby-players li.open { color: rgba(255, 255, 255, 0.35); }
 .lobby-players.dim li { opacity: 0.6; }
 /* a win counts in this player's career (lobby.ts players, head) */
-.lobby-star { color: var(--lime); }
+.lobby-star { color: var(--accent); }
 /* quick chat: what a player of the lobby said lately, beside their name (lobby.ts say) */
-.lobby-said { max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--lime); }
+.lobby-said { max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--accent); }
 /* the fastest other car against ours: a small speedometer beside its words (lobby.ts speedometer) */
 .lobby-speed { display: flex; justify-content: center; align-items: center; gap: 0.4em; font-size: 0.85em; color: var(--muted); }
 .lobby-gauge { flex: none; width: 1.9em; height: 1.1em; }
@@ -1246,10 +1255,10 @@ html[data-touch] .ov-act.tap { min-height: 32px; }
 .lobby-places li.mine .lobby-time { color: var(--text); }
 /* the site's address in the bottom right of a loading screen (titlemark.ts corner): over the trip's cover too */
 .title-mark.corner { z-index: 6; }
-.lobby-prize { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--lime); }
+.lobby-prize { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
 .lobby-step { display: flex; gap: 0.6em; align-items: center; color: var(--muted); }
 .lobby-spin {
-  width: 1em; height: 1em; border: 2px solid rgba(255, 255, 255, 0.2); border-top-color: var(--lime); border-radius: 50%;
+  width: 1em; height: 1em; border: 2px solid rgba(255, 255, 255, 0.2); border-top-color: var(--accent); border-radius: 50%;
   animation: lobby-spin 0.9s linear infinite;
 }
 @keyframes lobby-spin { to { transform: rotate(1turn); } }
@@ -1287,7 +1296,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.64); }
 .compare-tag.before { left: 8px; }
 .compare-tag.after { right: 8px; }
 .compare input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
-.compare:has(input:focus-visible) { outline: 2px solid var(--lime); outline-offset: 2px; box-shadow: 0 0 12px var(--lime-glow); }
+.compare:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 12px var(--accent-glow); }
 .dlg-field { display: flex; align-items: center; gap: 12px; }
 .dlg-field input[type="text"] { flex: 1; min-width: 0; }
 /* the changelog (changelog.ts): the Controls sheet's width, the releases scrolling under the title and Close */
@@ -1325,11 +1334,11 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.64); }
 .dlg-head h2 { margin: 0; }
 /* the page menu (F9, shell.ts openMenu): a list in the cards' look (cards.ts .ov-*): one face, 16 and 14 px, two
  * weights; blocks with a line between them (what is about free roam, then the rest); each item a row, what it is on
- * the left and its state on the right, the row under the pointer, the keyboard or a controller lime.  Esc, F9 or a
+ * the left and its state on the right, the row under the pointer, the keyboard or a controller cyan.  Esc, F9 or a
  * controller's B close it, and Close at the top; the last save and Download log at the bottom.  A block with nothing
  * in it (no free roam) is not drawn. */
 .dlg.menu { width: min(352px, calc(100vw - 32px)); padding: 12px 0; }
-.dlg.menu h2 { margin: 0; font: 700 16px/24px var(--font); color: var(--lime); }
+.dlg.menu h2 { margin: 0; font: 700 16px/24px var(--font); color: var(--accent); }
 .menu-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 8px 8px 16px; }
 .menu-head .text-btn { text-decoration: none; }
 .menu-block { display: grid; align-content: start; padding-block: 4px; box-shadow: inset 0 1px var(--line); }
@@ -1340,17 +1349,17 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.64); }
 }
 .menu-row > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu-row > span:first-child { flex: none; max-width: 100%; }
-.menu-row:hover, .menu-row:focus-visible, .dlg.menu[data-pad] .menu-row:focus { outline: none; box-shadow: none; background: var(--lime-fill); color: var(--lime); }
+.menu-row:hover, .menu-row:focus-visible, .dlg.menu[data-pad] .menu-row:focus { outline: none; box-shadow: none; background: var(--accent-fill); color: var(--accent); }
 .menu-row:disabled { opacity: 0.5; background: none; color: var(--text); cursor: not-allowed; }
 .menu-val { color: var(--muted); }
-.menu-row.selected .menu-val { color: var(--lime); }
-.menu-row.go { font-weight: 700; color: var(--lime); }
+.menu-row.selected .menu-val { color: var(--accent); }
+.menu-row.go { font-weight: 700; color: var(--accent); }
 .menu-row.bad { color: var(--bad); }
-.menu-dot:not(:empty) { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--lime); font-size: 0; }
+.menu-dot:not(:empty) { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); font-size: 0; }
 .menu-radio { position: relative; display: grid; }
 .menu-radio .menu-row { padding-right: 88px; }
 .menu-radio .icon { position: absolute; top: 50%; translate: 0 -50%; width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--muted); }
-.menu-radio .icon:hover { color: var(--lime); }
+.menu-radio .icon:hover { color: var(--accent); }
 .menu-radio [data-act="radio-folder"] { right: 48px; }
 .menu-radio [data-act="playlist"] { right: 12px; }
 .dlg.playlist { width: min(640px, calc(100vw - 32px)); }
@@ -1375,7 +1384,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.64); }
 .chat-msg p { margin: 0; overflow-wrap: anywhere; }
 .chat-head { display: flex; align-items: baseline; gap: 8px; font-size: 14px; line-height: 20px; color: var(--muted); }
 .chat-head b { font-style: italic; }
-.chat-msg.in .chat-head b { color: var(--lime); }
+.chat-msg.in .chat-head b { color: var(--accent); }
 .chat-msg.out .chat-head b { color: var(--text); }
 .chat-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 14px; line-height: 20px; color: var(--muted); }
 #chat-left { margin-left: auto; font-variant-numeric: tabular-nums; }
@@ -1385,11 +1394,11 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.64); }
  * crewControl) and the friends' list (friends.ts) drawn into them, in the menu's look */
 .menu-back {
   display: flex; align-items: center; gap: 4px; min-width: 0; height: 32px; margin-left: -8px; padding: 0 8px 0 4px;
-  border: 0; border-radius: 8px; background: none; color: var(--lime); font: 700 16px/24px var(--font); cursor: pointer;
+  border: 0; border-radius: 8px; background: none; color: var(--accent); font: 700 16px/24px var(--font); cursor: pointer;
 }
 .menu-back svg { flex: none; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .menu-back span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.menu-back:hover, .menu-back:focus-visible, .dlg.menu[data-pad] .menu-back:focus { outline: none; box-shadow: none; background: var(--lime-fill); }
+.menu-back:hover, .menu-back:focus-visible, .dlg.menu[data-pad] .menu-back:focus { outline: none; box-shadow: none; background: var(--accent-fill); }
 .dlg .menu-note { margin: 0; padding: 0 16px 8px; color: var(--muted); font-size: 14px; line-height: 20px; }
 /* the menu's Controls: the start page's sheet, as wide as it needs there, under its ‹ */
 .dlg.menu:has(#menu-controls:not([hidden])) { width: min(560px, calc(100vw - 32px)); }
@@ -1400,7 +1409,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.64); }
 /* a world: its name, how many are in free roam there, a check on the game's own (the room for one on every row, so the
  * counts line up); Own name… turns into a field for a world's name */
 .menu-row .menu-end { display: flex; align-items: center; gap: 8px; flex: none; }
-.menu-end svg { flex: none; width: 20px; height: 20px; fill: none; stroke: var(--lime); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; visibility: hidden; }
+.menu-end svg { flex: none; width: 20px; height: 20px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; visibility: hidden; }
 .menu-row.selected .menu-end svg { visibility: visible; }
 .dlg .menu-field { display: block; width: auto; margin: 4px 16px; }
 /* a crew: its colour (the palette's button), its name, how many are in free roam in it, its link and Leave; the box to
@@ -1409,19 +1418,19 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.64); }
 .menu-crews .crews { display: grid; }
 .menu-crews .crew { height: 40px; padding: 4px 8px; border-radius: 0; background: none; }
 .menu-crews .crew-dot::before { box-shadow: 0 0 0 2px var(--frame), 0 0 0 4px var(--line); }
-.menu-crews .crew-dot:hover::before, .menu-crews .crew-dot[aria-expanded="true"]::before { box-shadow: 0 0 0 2px var(--frame), 0 0 0 4px var(--lime); }
+.menu-crews .crew-dot:hover::before, .menu-crews .crew-dot[aria-expanded="true"]::before { box-shadow: 0 0 0 2px var(--frame), 0 0 0 4px var(--accent); }
 .menu-crews .crew-text { flex: 1; justify-content: space-between; padding-left: 4px; }
 .menu-crews .crew-name { font-style: normal; font-weight: 400; }
 .menu-crews .crew-count { margin-right: 4px; }
 .menu-crews .crew-add { flex: none; width: auto; max-width: none; margin: 4px 16px; }
 .menu-crews .crew-colours { margin: 0 16px 4px; }
-/* a friend: its name, where it plays (a request's words lime, as the list's offers), its buttons; a friend's crews to
+/* a friend: its name, where it plays (a request's words cyan, as the list's offers), its buttons; a friend's crews to
  * invite it to under its row; the others in a line under the list, the box to ask one by name under that */
 .menu-block .fl li { min-height: 40px; padding: 4px 8px 4px 16px; box-shadow: none; }
 .menu-block .fl-name { display: flex; align-items: baseline; gap: 8px; font-style: normal; font-weight: 400; }
 .menu-block .fl-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .menu-block .fl-st { flex: none; margin-left: auto; color: var(--muted); }
-.menu-block .fl li:has(.fl-yes) .fl-st { color: var(--lime); }
+.menu-block .fl li:has(.fl-yes) .fl-st { color: var(--accent); }
 .menu-block .fl li.fl-pick { padding: 0 16px 8px; }
 .menu-block .fl-pick .fl-st { margin-left: 0; }
 .menu-friends > .fl:not(:last-child) { padding-bottom: 4px; box-shadow: inset 0 -1px var(--line); }
@@ -1513,3 +1522,121 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.64); }
 .fmbot:hover .fmbot-go { color: #fff; }
 /* /lastfm.html, the Last.fm popup's page, when the browser keeps the window open (lastfm-callback.ts) */
 .lastfm-closed { margin: 24px; }
+
+/* ------------------------------------------------- the DualSense Edition's neon
+ * Panels of frosted indigo with a hairline rim (a shadow, so no size changes), neon gradients on what matters (the
+ * title, Play, the open tab, the loading bar), and motion where something changes: a tab's page rises in, buttons
+ * lift and glow under the pointer.  No motion for those who ask for none (at the end). */
+.top, .panel {
+  background: linear-gradient(180deg, rgba(27, 22, 58, 0.88), rgba(14, 11, 32, 0.9));
+  box-shadow: inset 0 0 0 1px var(--rim), inset 0 1px rgba(255, 255, 255, 0.06), 0 16px 48px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+}
+.top { background: linear-gradient(180deg, rgba(20, 16, 44, 0.92), rgba(10, 8, 24, 0.92)); }
+/* a neon line along the header's top edge, slowly drifting */
+.top::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), var(--accent), transparent) 0 0 / 200% 100%;
+  animation: neon-drift 8s linear infinite;
+}
+@keyframes neon-drift { to { background-position: -200% 0; } }
+
+/* the title in neon, its edition over it as a tag */
+.brand h1 {
+  background: linear-gradient(90deg, #ffffff 0%, #bff7ff 40%, var(--accent) 70%, var(--accent-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 24px rgba(77, 232, 255, 0.18);
+}
+.edition {
+  display: table; margin-bottom: 8px; padding: 0 8px; border-radius: 4px;
+  font-size: 12px; line-height: 20px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
+  color: #ffffff; background: linear-gradient(90deg, rgba(77, 232, 255, 0.22), rgba(180, 107, 255, 0.32));
+  box-shadow: inset 0 0 0 1px rgba(180, 107, 255, 0.6), 0 0 12px var(--accent-2-glow);
+  -webkit-text-fill-color: #ffffff;
+}
+.brand .credit a { color: var(--accent); }
+
+h2, h3 { color: var(--text); }
+.panel > h2, .panel-head h2 { text-shadow: 0 0 16px rgba(77, 232, 255, 0.2); }
+
+/* buttons: they lift and glow under the pointer */
+.btn, .play, .text-btn, .opt, .tab, .lang-pick select, .switch, .set, .profiles li {
+  transition: color 0.2s var(--ease), background-color 0.2s var(--ease), border-color 0.2s var(--ease),
+    box-shadow 0.2s var(--ease), transform 0.12s var(--ease), filter 0.2s var(--ease);
+}
+.btn:hover:not(:disabled), .lang-pick select:hover:not(:disabled) {
+  border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow); transform: translateY(-1px);
+}
+.btn:active:not(:disabled) { transform: translateY(0); }
+.btn.selected { box-shadow: 0 0 16px var(--accent-glow); }
+
+/* Play: the neon gradient, dark words on it */
+.play {
+  border: 0; padding-inline: 26px 18px;           /* the 2 px rim's room, kept: 48 px tall, as before */
+  background: var(--neon); color: #07061a; box-shadow: 0 0 24px var(--accent-glow), 0 0 48px rgba(180, 107, 255, 0.25);
+}
+.play:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 32px var(--accent-glow), 0 0 64px var(--accent-2-glow); }
+.play:active:not(:disabled) { transform: translateY(0); }
+.play kbd { border-color: rgba(7, 6, 26, 0.5); }
+body[data-phase="ready"] .play:not(:disabled) { animation: play-pulse 2.4s var(--ease) infinite; }
+@keyframes play-pulse { 50% { box-shadow: 0 0 36px var(--accent-glow), 0 0 72px var(--accent-2-glow); } }
+.play:disabled { background: var(--field); box-shadow: inset 0 0 0 2px #2f2a55; }
+body[data-phase="ready"] .status { text-shadow: 0 0 20px var(--accent-glow); }
+
+/* tabs: the open one underlined in neon, the line sliding in */
+.tab { position: relative; }
+.tab::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 2px;
+  background: var(--neon); box-shadow: 0 0 12px var(--accent-glow);
+  transform: scaleX(0); transition: transform 0.25s var(--ease);
+}
+.tab[aria-selected="true"], .tabs.big[data-fit="rows"] > .tab[aria-selected="true"] { box-shadow: none; text-shadow: 0 0 16px var(--accent-glow); }
+.tab[aria-selected="true"]::after { transform: scaleX(1); }
+.tab:hover:not([aria-selected="true"]) { color: #ffffff; }
+
+/* a tab's page rises in as it opens */
+.pane:not([hidden]), .tab-panel:not([hidden]) { animation: rise-in 0.32s var(--ease) both; }
+@keyframes rise-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* rows: a faint neon wash under the pointer */
+.set:hover { background: linear-gradient(90deg, rgba(77, 232, 255, 0.05), rgba(180, 107, 255, 0.03) 60%, transparent); }
+.seg { box-shadow: inset 0 0 0 1px rgba(122, 114, 200, 0.25); }
+.opt:has(input:checked) { box-shadow: 0 0 12px var(--accent-glow); }
+.switch:checked { background: radial-gradient(circle at calc(100% - 14px) 50%, #ffffff 7px, var(--accent) 8px, transparent 9px) no-repeat, var(--accent-fill); }
+.set input[type="number"], .set input[type="text"], .set select, .profiles input[type="text"], .dlg input[type="text"] {
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.profiles li { box-shadow: inset 0 0 0 1px rgba(122, 114, 200, 0.18); }
+.profiles li:hover { box-shadow: inset 0 0 0 1px rgba(77, 232, 255, 0.4); }
+.stat { box-shadow: inset 0 0 0 1px rgba(122, 114, 200, 0.2); }
+.stat b { text-shadow: 0 0 12px var(--accent-glow); }
+
+/* dialogs: the header's frame, a neon rim, and they open with a fade and a little scale */
+dialog::backdrop { background: rgba(4, 3, 12, 0.7); backdrop-filter: blur(4px); }
+.dlg {
+  border-color: rgba(140, 120, 255, 0.45);
+  background: linear-gradient(180deg, #17123a, var(--frame));
+  box-shadow: 0 0 0 1px rgba(77, 232, 255, 0.08), 0 0 48px rgba(110, 60, 255, 0.3), 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+.dlg[open] { animation: dlg-in 0.24s var(--ease) both; }
+@keyframes dlg-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+
+/* the Mods tab: this edition's own section first, in a neon frame (mods-ui.ts section: its heading's id) */
+.mods-group:has(> #mods-edition) {
+  padding: 16px 16px 4px; margin-bottom: 16px; border-radius: 12px;
+  background: linear-gradient(135deg, rgba(77, 232, 255, 0.07), rgba(180, 107, 255, 0.09));
+  box-shadow: inset 0 0 0 1px rgba(180, 107, 255, 0.45), 0 0 24px rgba(110, 60, 255, 0.18);
+}
+#mods-edition {
+  background: var(--neon); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.mods-group > h3 { letter-spacing: 0.02em; }
+
+/* the page's scrollbars in the theme */
+html { scrollbar-color: #3a3270 var(--bg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .top::before, body[data-phase="ready"] .play:not(:disabled), .pane:not([hidden]), .tab-panel:not([hidden]), .dlg[open] { animation: none; }
+  .btn, .play, .text-btn, .opt, .tab, .tab::after, .lang-pick select, .switch, .set, .profiles li { transition: none; }
+  .btn:hover:not(:disabled), .play:hover:not(:disabled), .lang-pick select:hover:not(:disabled) { transform: none; }
+}

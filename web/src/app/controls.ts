@@ -14,7 +14,7 @@
 
 import { allPads, drivingPad, familyOf, PAD_DRIVER_EVENT } from '../input/gamepad';
 import { connectSteamPad, steamPadsPicked, steamPadsPossible } from '../input/steampad';
-import { connectDualSense, dualSensePicked, dualSensePossible, setTriggerStrength, triggerStrength, type Strength } from '../input/dualsense';
+import { connectDualSense, dualSensePicked, dualSensePossible, onTriggerStrength, setTriggerStrength, triggerStrength, type Strength } from '../input/dualsense';
 import { PADF_PLAYSTATION } from '../input/proto';
 import { wheelSection } from './wheel-setup';
 import { askMotion, levelHorizon, menuSize, nitroSteerSide, onSteering, setSteering, steering, STEERING, steeringName, touchPosition,
@@ -200,6 +200,7 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
     ${dualSensePossible() ? `<p class="hint ds-state"></p><div class="row"><button type="button" class="btn" data-ds></button></div>
     <p class="hint">${esc(t('Trigger strength'))}</p>
     <div class="seg" role="radiogroup" aria-label="${esc(t('Trigger strength'))}">
+      <label class="opt"><input type="radio" name="${id}-dss" value="off">${esc(t('Off'))}</label>
       <label class="opt"><input type="radio" name="${id}-dss" value="light">${esc(t('Light'))}</label>
       <label class="opt"><input type="radio" name="${id}-dss" value="medium">${esc(t('Medium'))}</label>
       <label class="opt"><input type="radio" name="${id}-dss" value="strong">${esc(t('Strong'))}</label>
@@ -231,6 +232,8 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
   };
   /** A DualSense's adaptive triggers, where the browser can set them (dualsense.ts: WebHID): those connected in this
    *  browser for it, and the button that opens the browser's list (as the Steam Controller's) */
+  /** the Trigger strength radios' watch on the setting (each drawing of the sheet makes them anew) */
+  let offStrength: (() => void) | null = null;
   const dualSensePart = () => {
     const btn = pad.querySelector<HTMLButtonElement>('[data-ds]'), state = pad.querySelector<HTMLElement>('.ds-state');
     if (!btn || !state) return;
@@ -243,10 +246,14 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
     void dualSensePicked().then(show);
     btn.onclick = () => connectDualSense().then(() => dualSensePicked()).then(show, () => {});
     // how strong the triggers and the road's rumble are: taken at once, in a running game too
-    for (const r of pad.querySelectorAll<HTMLInputElement>(`.pad-foot input[name="${id}-dss"]`)) {
-      r.checked = r.value === triggerStrength();
-      r.onchange = () => { if (r.checked) setTriggerStrength(r.value as Strength); };
-    }
+    // the same setting as the Mods tab's DualSense Adaptive Triggers (settings.ini trigger_strength): a pick on either
+    // shows on both
+    const strengths = [...pad.querySelectorAll<HTMLInputElement>(`.pad-foot input[name="${id}-dss"]`)];
+    const showStrength = (v: Strength) => { for (const r of strengths) r.checked = r.value === v; };
+    showStrength(triggerStrength());
+    for (const r of strengths) r.onchange = () => { if (r.checked) setTriggerStrength(r.value as Strength); };
+    offStrength?.();
+    offStrength = strengths.length ? onTriggerStrength(showStrength) : null;
   };
   /** a label too long for the drawing (another language's words) a little smaller, so it stays inside the 336 px;
    *  measured once the tab shows (a hidden one has no size).  Measured again after each change: a renderer that draws

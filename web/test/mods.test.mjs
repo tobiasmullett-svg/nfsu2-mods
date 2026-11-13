@@ -80,7 +80,7 @@ test('the entries: ids once each, in the sections\' order', () => {
   assert.equal(new Set(ids).size, ids.length, 'ids unique');
   for (const id of ids) assert.match(id, /^[a-z0-9-]+$/, id);
   const kinds = M.KINDS.map(k => k.kind);
-  assert.deepEqual(kinds, ['screen', 'shared', 'rules', 'car']);
+  assert.deepEqual(kinds, ['edition', 'screen', 'shared', 'rules', 'car']);
   let at = 0;
   for (const m of MODS) {
     const k = kinds.indexOf(m.kind);

@@ -278,7 +278,8 @@ The start page shows these keys under **Controls**, and F9, Controls shows them 
   hums with the engine: faster and stronger as the revs climb. It kicks when the gearbox shifts and shakes at the top
   of the revs and when the wheels spin off the line; the brake (L2) gets stiffer the faster you go and judders when
   you stand on it at speed; both shake in a crash. The controller also rumbles under hard braking and in fast
-  corners. **Trigger strength** under the button sets how strong all of this is: Light, Medium or Strong. They follow the game's own layout (R2 throttle,
+  corners. **Trigger strength** under the button (or on the Mods tab, under DualSense Edition) sets how strong all of
+  this is: Off, Light, Medium or Strong; the Mods tab's Road Rumble turns the braking and cornering rumble on or off. They follow the game's own layout (R2 throttle,
   L2 brake), and Rumble off turns them off too. Once connected this way, the controller's rumble comes from the page
   too, with the triggers (Chrome's own stays silent on some DualSenses). A DualShock 4 has no such triggers: it rumbles only. If Steam is
   running, its PlayStation controller support can take the triggers over: turn that off for the controller.

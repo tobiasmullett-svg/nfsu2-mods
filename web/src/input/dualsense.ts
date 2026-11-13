@@ -25,14 +25,16 @@
 //   L2, the brake     a spring that stiffens with the car's speed; a judder while it is held down hard at speed,
 //                     slower as the car slows
 //   both              a shake with a crash (the game's strong rumble)
-// The motors add the road to the game's rumble (roadRumble): the tyres under hard braking and in a fast corner, from
-// the brake, the stick and the car's speed (the game's status has no word for the tyres' slip).
-// How strong all of it is, is the player's (the Controls sheet: Light, Medium, Strong).
+// The motors add the road to the game's rumble (roadrumble.ts, settings.ini road_rumble): the tyres under hard braking
+// and in a fast corner, from the brake, the stick and the car's speed (the game's status has no word for the tyres'
+// slip).  How strong all of it is, is the player's: settings.ini trigger_strength (Off, Light, Medium, Strong), on the
+// Mods tab's row and the Controls sheet both.
 // A game built before those status words has only "drive": the springs alone.  Outside driving (menus, the pause, a
 // hidden or unfocused page, the game's end) both triggers are let go.
 
-import { DUALSENSE_STRENGTH, localStore } from '../app/prefs';
 import type { PadSnapshot } from './gamepad';
+import { roadRumble, type Rumble } from './roadrumble';
+export { roadRumble, type RoadInput, type Rumble } from './roadrumble';
 import { PAD_AXIS_LT, PAD_AXIS_LX, PAD_AXIS_RT } from './proto';
 
 /** a WebHID device, as much of it as this file uses (TypeScript's DOM types have none) */
@@ -124,8 +126,6 @@ export function triggerReport(r2: TriggerEffect, l2: TriggerEffect, bluetooth: b
   return { id: 0x31, data };
 }
 
-/** the game's rumble for the controller's two motors, 0..1 each */
-export interface Rumble { strong: number; weak: number }
 const level = (v: number) => Math.max(0, Math.min(255, Math.round(v * 255)));
 
 /** what the triggers' effects come from, each time they are worked out */
@@ -145,20 +145,37 @@ export interface TriggerInput {
   scale?: number;
 }
 
-/** how strong the triggers and the road's rumble are: the player's pick, and each one's share of the full strength */
-export type Strength = 'light' | 'medium' | 'strong';
-export const STRENGTHS: Readonly<Record<Strength, number>> = { light: 0.45, medium: 0.7, strong: 1 };
-let strength: Strength | null = null;
-export function triggerStrength(): Strength {
-  if (!strength) { const v = localStore.get(DUALSENSE_STRENGTH); strength = v === 'light' || v === 'medium' ? v : 'strong'; }
-  return strength;
+/** how strong the triggers are (settings.ini trigger_strength: the Mods tab's DualSense Adaptive Triggers, and the
+ *  Controls sheet's Trigger strength), and each one's share of the full strength; off: no effects, the controller
+ *  still open for its rumble */
+export type Strength = 'off' | 'light' | 'medium' | 'strong';
+export const STRENGTHS: Readonly<Record<Strength, number>> = { off: 0, light: 0.45, medium: 0.7, strong: 1 };
+const isStrength = (v: string): v is Strength => Object.hasOwn(STRENGTHS, v);
+let strength: Strength = 'strong', road = true;
+/** what writes a pick into settings.ini (shell.ts: the settings panel), so the Mods tab's row and the file agree */
+let writer: ((v: Strength) => void) | null = null;
+const listeners = new Set<(v: Strength) => void>();
+export function triggerStrength(): Strength { return strength; }
+/** the settings as settings.ini has them (shell.ts, each time it is read or written): trigger_strength, road_rumble */
+export function setDualSenseSettings(s: { strength: string; road: boolean }) {
+  const v = isStrength(s.strength) ? s.strength : 'strong';
+  road = s.road;
+  if (v === strength) return;
+  strength = v;
+  for (const f of listeners) f(v);
 }
-export function setTriggerStrength(v: Strength) { strength = v; localStore.set(DUALSENSE_STRENGTH, v); }
+/** a pick on the Controls sheet: into settings.ini through the writer (none yet: here only) */
+export function setTriggerStrength(v: Strength) {
+  if (writer) writer(v); else setDualSenseSettings({ strength: v, road });
+}
+export function onTriggerStrength(f: (v: Strength) => void): () => void { listeners.add(f); return () => listeners.delete(f); }
+export function setStrengthWriter(f: ((v: Strength) => void) | null) { writer = f; }
 
 /** from a zone on, one strength */
 const from = (zone: number, s: number) => Array.from({ length: 10 }, (_, i) => i >= zone ? s : 0);
 /** an effect at a share of its strength (never below 1: the effect stays) */
 function scaled(e: TriggerEffect, k: number): TriggerEffect {
+  if (k <= 0) return TRIGGER_OFF;
   if (e.kind === 'off' || k >= 1) return e;
   return { ...e, zones: e.zones.map(s => s ? Math.max(1, Math.round(s * k)) : 0) };
 }
@@ -245,41 +262,6 @@ const KICK_MS = 110, LIMIT_MS = 400, FORGET_MS = 20000, MIN_TOP = 4500;
 /** the throttle counts as held down from HELD_ON of its travel until it is back at HELD_OFF; the hum's frequency at
  *  idle and at the top of the revs (Hz) */
 const HELD_ON = 0.6, HELD_OFF = 0.45, HUM_HZ = [16, 46] as const;
-
-/** what the road's rumble comes from */
-export interface RoadInput {
-  /** whether this controller drives a car on a page that shows */
-  driving: boolean;
-  /** the car's speed (m/s) and its gear (0 reverse); undefined: a game that does not say */
-  speed?: number; gear?: number;
-  /** the brake, 0..1, and the steering, -1..1 */
-  brake: number; steer: number;
-  /** how strong, 0..1 (STRENGTHS; undefined: 1) */
-  scale?: number;
-}
-/**
- * The road on the motors, beside the game's own rumble (which says a surface's change and a hit, little else): the
- * tyres under hard braking (the brake past 0.6 above 12 m/s, growing to 55 m/s; the big motor joins past 0.9 above
- * 25 m/s) and in a fast corner (the stick past half its way above 18 m/s, growing to 55 m/s; the big motor joins on
- * the hardest).  From the controller and the car's speed: the game's status has no word for the tyres' slip.
- */
-export function roadRumble(i: RoadInput): Rumble {
-  const speed = Math.abs(i.speed ?? 0);
-  if (!i.driving || i.speed === undefined || i.gear === 0) return { strong: 0, weak: 0 };
-  let strong = 0, weak = 0;
-  const b = Math.max(0, Math.min(1, (i.brake - 0.6) / 0.4)), bv = Math.max(0, Math.min(1, (speed - 12) / 43));
-  if (b > 0 && speed > 12) {
-    weak = b * (0.15 + 0.35 * bv);
-    if (i.brake > 0.9 && speed > 25) strong = 0.12 + 0.18 * bv;
-  }
-  const c = Math.max(0, Math.min(1, (Math.abs(i.steer) - 0.5) / 0.5)) * Math.max(0, Math.min(1, (speed - 18) / 37));
-  if (c > 0) {
-    weak = Math.max(weak, 0.1 + 0.3 * c);
-    if (c > 0.7) strong = Math.max(strong, 0.15 * c);
-  }
-  const k = i.scale ?? 1;
-  return { strong: strong * k, weak: weak * k };
-}
 
 // ---- the controllers -----------------------------------------------------------------------------------------------
 
@@ -421,14 +403,16 @@ export class TriggerDriver {
     const st = this.last;
     const shown = typeof document === 'undefined' || (document.visibilityState === 'visible' && document.hasFocus());
     const mine = !!driverId && isDualSense(driverId);
-    const drive = mine ? st?.get('drive') ?? 0 : 0, scale = STRENGTHS[triggerStrength()];
+    const drive = mine ? st?.get('drive') ?? 0 : 0, scale = STRENGTHS[strength];
     const speed = st?.get('car_speed'), gear = st?.get('car_gear'), brake = s.axes[PAD_AXIS_LT] ?? 0;
     const { r2, l2 } = this.feel.effects({
       now, drive, shown, speed, rpm: st?.get('car_rpm'), gear,
       throttle: s.axes[PAD_AXIS_RT] ?? 0, brake, hit, scale,
     });
-    const road = roadRumble({ driving: (drive & 3) !== 0 && shown, speed, gear, brake, steer: s.axes[PAD_AXIS_LX] ?? 0, scale });
-    for (const p of pads.values()) p.road = road;
+    // the road's rumble: its own switch (road_rumble), as strong as the triggers (full with them off)
+    const r = road ? roadRumble({ driving: (drive & 3) !== 0 && shown, speed, gear, brake, steer: s.axes[PAD_AXIS_LX] ?? 0,
+      scale: strength === 'off' ? 1 : scale }) : { strong: 0, weak: 0 };
+    for (const p of pads.values()) p.road = r;
     setTriggers(r2, l2);
   }
 

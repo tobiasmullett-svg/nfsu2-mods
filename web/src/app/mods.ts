@@ -11,7 +11,7 @@
 import { N } from './i18n';
 
 /** the tab's sections, in this order */
-export type ModKind = 'screen' | 'shared' | 'rules' | 'car';
+export type ModKind = 'edition' | 'screen' | 'shared' | 'rules' | 'car';
 /** where a row's setting is when the tab has no control for it */
 export type Place = 'display' | 'mainMenu';
 /** what changes for other players: mine, on your screen; you, sounds and menus only you get */
@@ -71,6 +71,7 @@ export interface Mod {
 }
 
 export const KINDS: readonly { kind: ModKind; title: string }[] = [
+  { kind: 'edition', title: N('DualSense Edition') },
   { kind: 'screen', title: N('On your screen') },
   { kind: 'shared', title: N('Seen by others') },
   { kind: 'rules', title: N('Game rules') },
@@ -119,7 +120,32 @@ export const LABELS = {
   off: N('With it off: as in the original game'),
 } as const;
 
+/** this edition's own: its maker (its source is this repo's) */
+const EDITION: readonly Author[] = [{ name: 'tobiasmullett-svg', url: 'https://github.com/tobiasmullett-svg' }];
+
 export const MODS: readonly Mod[] = [
+  // ---- This edition's own
+  {
+    id: 'dualsense', name: 'DualSense Adaptive Triggers', authors: EDITION, links: {},
+    kind: 'edition', uses: 'original', control: { setting: 'trigger_strength', values: ['light', 'medium', 'strong'] },
+    line: N('The triggers push back and shake with the engine, the brakes and crashes.'),
+    details: 'Connect a DualSense once under Controls, Controller (Chrome and Edge). The throttle has a light spring, hums with the engine when held down and kicks on a gear shift; the brake stiffens with speed and judders when you stand on it. Off: no trigger effects, the controller still rumbles.',
+    online: 'you', files: ['web/src/input/dualsense.ts'],
+  },
+  {
+    id: 'road-rumble', name: 'Road Rumble', authors: EDITION, links: {},
+    kind: 'edition', uses: 'original', control: { setting: 'road_rumble' },
+    line: N('A DualSense rumbles under hard braking and in fast corners.'),
+    details: 'On top of the game\'s own rumble, which only marks a change of surface and a crash. It grows with the car\'s speed, as strong as the triggers are set.',
+    online: 'you', files: ['web/src/input/roadrumble.ts'],
+  },
+  {
+    id: 'tune-presets', name: 'Tuning Presets', authors: EDITION, links: {},
+    kind: 'edition', uses: 'original', control: { setting: 'tune_presets', values: ['on', 'always'] },
+    line: N('The Dyno\'s setups start from a preset for each kind of race.'),
+    details: 'Circuit, drag, drift, Street X and URL each get their own suspension, steering, final drive, brake bias and downforce, fitted to what your car\'s parts allow. On fills a setup you never touched; Always sets the preset\'s sliders each time you open one. The sliders it does not set stay as you left them.',
+    online: 'you', files: ['runtime/tunepresets.c'],
+  },
   // ---- On your screen
   {
     id: 'uhud', name: 'Upscaled HUD', authors: [{ name: 'LunicAura106' }], links: { page: 'https://nfsmods.xyz/mod/4319' },
