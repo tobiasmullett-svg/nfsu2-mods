@@ -107,18 +107,16 @@ pub fn sha256_source(text: &str) -> String {
 /// (key names in the settings; Keyboard Lock itself has no policy and needs full screen), sound without a
 /// click first, the screen kept on while a game runs (a controller's buttons do not keep every system's
 /// screen awake), the motion sensor for the touch controls' tilt steering (the device orientation events
-/// need accelerometer and gyroscope), WebHID for Valve's controllers, which are no gamepads to the
-/// browsers (web/src/input/steampad.ts), and for a DualSense's triggers (web/src/input/dualsense.ts; only
-/// the controllers the player picked in the browser's list), and the microphone for a DualSense's Full
-/// Vibration: Chrome names the sound cards only to a page that may use it, and the controller's card is
-/// found by its name (web/src/input/haptics.ts; nothing is recorded).  Without it Chrome refuses at once,
-/// with no question to the player.  The rest is switched off for this page and anything it could embed.
+/// need accelerometer and gyroscope), and WebHID for Valve's controllers, which are no gamepads to the
+/// browsers (web/src/input/steampad.ts), and for a DualSense's triggers and lightbar (web/src/input/dualsense.ts;
+/// only the controllers the player picked in the browser's list).  The rest is switched off for this page and
+/// anything it could embed.
 pub const PERMISSIONS_POLICY: &str = concat!(
     "gamepad=(self), fullscreen=(self), keyboard-map=(self), autoplay=(self), cross-origin-isolated=(self), ",
-    "screen-wake-lock=(self), accelerometer=(self), gyroscope=(self), hid=(self), microphone=(self), ",
+    "screen-wake-lock=(self), accelerometer=(self), gyroscope=(self), hid=(self), ",
     "bluetooth=(), browsing-topics=(), camera=(), clipboard-read=(), display-capture=(), ",
     "encrypted-media=(), geolocation=(), idle-detection=(), local-fonts=(), ",
-    "magnetometer=(), midi=(), payment=(), publickey-credentials-get=(), ",
+    "magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), ",
     "serial=(), usb=(), window-management=(), xr-spatial-tracking=()",
 );
 
