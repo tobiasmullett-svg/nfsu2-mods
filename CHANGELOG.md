@@ -11,6 +11,12 @@ first, then under `### Fixes` what was broken and works now, which the popup kee
 insides, the forum bot, logs, tests, docs and cheat checks. A change that may or may not belong here is asked about
 before the release, not guessed.
 
+## 2026-11-14 (ec0e165)
+
+- **DualSense Edition:** the controller's light shows your car's underglow colour, and follows it as you pick a neon in the shop (Mods tab: Lightbar Neon).
+- **DualSense Edition:** Full Vibration: on a USB cable, the controller's fine vibration plays the engine, the road, kerbs, crashes, gear changes and nitrous (Mods tab, off at first; try it under Controls, Controller).
+- **DualSense Edition:** a DualSense that isn't connected for its triggers yet gets an offer to connect it, on the start page and over the game's menus.
+
 ## 2026-11-13 (d070d49)
 
 - **DualSense Edition:** a DualSense's adaptive triggers push back and shake with the engine, the brakes and crashes (Mods tab: Off, Light, Medium or Strong).
