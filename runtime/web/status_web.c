@@ -209,40 +209,28 @@ static void touch_state(int drive){
                     (drive & 3) ? fast() : 0 };
     if (memcmp(v, last, sizeof v)){ memcpy(last, v, sizeof v); host_status_set_n(slot, v, 4); }
 }
-/* "car_speed", "car_rpm", "car_gear", "car_nos": the player's car while they
- * drive, for a DualSense's adaptive triggers and its vibration
- * (web/src/input/dualsense.ts, haptics.ts): its speed (m/s, in steps of 0.5),
- * its engine's rpm (in steps of 25), its gear (0 reverse, 1 neutral, 2 first
- * ..) and 1 while its nitrous fires; the steps keep a steady car from a new
- * table every frame.  0, 0, -1 and 0 while not driving.  Not with rumble off
- * (NFSU2_FF=0): the page then has no car to go by and leaves the triggers
- * alone.  The nitrous fires while what was left of it as it went on outlasts
- * the time since (roam_game.c nos_left, as the game's 0x5925B0 has it). */
-static int nos_on(uint32_t car){
-    uint32_t n = car + CAR_NOS;
-    if (!mem_is_committed(n + 0x414u) || !mem_is_committed(n + 0x423u) || !mem_is_committed(G_WORLDTIMER + 3u)) return 0;
-    uint32_t since = MR32(n + 0x420u), full = MR32(n + 0x414u), left = MR32(n + 0x41cu);
-    if (!since || since == 0x7fffffffu || !full || full == 0x7fffffffu || left == 0x7fffffffu) return 0;
-    return (int32_t)left - (int32_t)(MR32(G_WORLDTIMER) - since) > 0;
-}
+/* "car_speed", "car_rpm", "car_gear": the player's car while they drive, for a
+ * DualSense's adaptive triggers (web/src/input/dualsense.ts): its speed (m/s,
+ * in steps of 0.5), its engine's rpm (in steps of 25) and its gear (0 reverse,
+ * 1 neutral, 2 first ..); the steps keep a steady car from a new table every
+ * frame.  0, 0 and -1 while not driving.  Not with rumble off (NFSU2_FF=0):
+ * the page then has no car to go by and leaves the triggers alone. */
 static void car_state(int drive){
-    static int slot[4] = { -2, -2, -2, -2 }, on = -1;
-    static double last[4] = { -2, -2, -2, -2 };
+    static int slot[3] = { -2, -2, -2 }, on = -1;
+    static double last[3] = { -2, -2, -2 };
     if (on < 0) on = setting_bool("NFSU2_FF", 1);
     if (!on) return;
-    if (slot[0] == -2){ slot[0] = host_status_slot("car_speed"); slot[1] = host_status_slot("car_rpm"); slot[2] = host_status_slot("car_gear");
-                        slot[3] = host_status_slot("car_nos"); }
+    if (slot[0] == -2){ slot[0] = host_status_slot("car_speed"); slot[1] = host_status_slot("car_rpm"); slot[2] = host_status_slot("car_gear"); }
     uint32_t car = (drive & 3) ? rd32_ok(rd32_ok(G_PLAYER0) + PL_CAR) : 0u;
-    double v[4] = { 0, 0, -1, 0 };
+    double v[3] = { 0, 0, -1 };
     if (car && mem_is_committed(car + CAR_SPEED) && mem_is_committed(car + CAR_RPM + 3u)){
         float sp = MRF32(car + CAR_SPEED), rpm = MRF32(car + CAR_RPM);
         if (sp < 0.f) sp = -sp;
         if (sp == sp && sp < 1000.f) v[0] = (double)(int)(sp * 2.f + 0.5f) / 2.0;
         if (rpm > 0.f && rpm < 100000.f) v[1] = (double)((int)(rpm / 25.f + 0.5f) * 25);
         v[2] = (double)(int32_t)MR32(car + CAR_GEAR);
-        v[3] = nos_on(car);
     }
-    if (memcmp(v, last, sizeof v)){ memcpy(last, v, sizeof v); host_status_set_n(slot, v, 4); }
+    if (memcmp(v, last, sizeof v)){ memcpy(last, v, sizeof v); host_status_set_n(slot, v, 3); }
 }
 /* "car_neon": the underglow of the car on screen (neonlight.c), for a DualSense's lightbar
  * (web/src/input/dualsense.ts): -1 no car, else 0xRRGGBB, plus 0x1000000 when it pulses (0: no neon) */

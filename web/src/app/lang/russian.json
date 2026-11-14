@@ -1703,15 +1703,6 @@
   "Join takes you to your friend: their world, their track and their car.": "«Присоединиться» переносит вас к другу: в его мир, на его трассу и к его машине.",
   "{name} is in a part of the city your career hasn't opened yet.": "{name} ездит в части города, которая в вашей карьере ещё не открыта.",
   "{name} could not be found in free roam.": "Игрока {name} не удалось найти в свободной езде.",
-  "Test full vibration": "Проверить полную вибрацию",
-  "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "DualSense на USB-кабеле не найден: тонкая вибрация не работает через Bluetooth.",
-  "Windows gives the controller {n} sound channels; its vibration needs 4.": "Windows даёт геймпаду {n} звуковых канала; для вибрации нужно 4.",
-  "This browser can't send sound to the controller.": "Этот браузер не может отправлять звук на геймпад.",
-  "To find the controller's vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.": "Чтобы найти вибрацию контроллера, разрешите этой странице доступ к микрофону (значок слева от адресной строки) и попробуйте снова. Ничего не записывается.",
-  "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Почувствуй: левая рукоять, правая рукоять, затем дорога, поребрик и двигатель.",
-  "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Готово. Всё почувствовал? Включи Full Vibration на вкладке «Моды».",
-  "It played on: {device}": "Воспроизведено на: {device}",
   "DualSense found: connect it for its trigger effects, rumble and light.": "Найден DualSense: подключи его для эффектов курков, вибрации и подсветки.",
-  "A DualSense's light shows your car's underglow colour.": "Подсветка DualSense показывает цвет неона под твоей машиной.",
-  "A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.": "DualSense на USB-кабеле передаёт дорогу, двигатель, поребрики и нитро."
+  "A DualSense's light shows your car's underglow colour.": "Подсветка DualSense показывает цвет неона под твоей машиной."
 }

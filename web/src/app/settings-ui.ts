@@ -89,7 +89,6 @@ export const MOD_CONTROLS: Record<string, Control> = {
   trigger_strength: { t: 'seg', opts: [['off', N('Off')], ['light', N('Light')], ['medium', N('Medium')], ['strong', N('Strong')]] },
   road_rumble: { t: 'switch' },
   lightbar: { t: 'switch' },
-  full_vibration: { t: 'switch' },
   tune_presets: { t: 'seg', opts: [['off', N('Off')], ['on', N('On')], ['always', N('Always')]] },
   // mod_rims: { t: 'switch' },   (the rims: out for now, mods.ts)
 };

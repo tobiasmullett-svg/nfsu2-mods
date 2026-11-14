@@ -1583,15 +1583,6 @@
   "Join takes you to your friend: their world, their track and their car.": "Η «Συμμετοχή» σε πηγαίνει στον φίλο σου: στον κόσμο του, στην πίστα του και στο αυτοκίνητό του.",
   "{name} is in a part of the city your career hasn't opened yet.": "Ο παίκτης {name} είναι σε μέρος της πόλης που δεν έχει ξεκλειδωθεί ακόμα στην καριέρα σου.",
   "{name} could not be found in free roam.": "Ο παίκτης {name} δεν βρέθηκε στην ελεύθερη οδήγηση.",
-  "Test full vibration": "Δοκιμή πλήρους δόνησης",
-  "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "Δεν βρέθηκε DualSense σε καλώδιο USB: η λεπτή δόνηση δεν περνά μέσω Bluetooth.",
-  "Windows gives the controller {n} sound channels; its vibration needs 4.": "Τα Windows δίνουν στο χειριστήριο {n} κανάλια ήχου· η δόνηση χρειάζεται 4.",
-  "This browser can't send sound to the controller.": "Αυτό το πρόγραμμα περιήγησης δεν μπορεί να στείλει ήχο στο χειριστήριο.",
-  "To find the controller's vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.": "Για να βρεθεί η δόνηση του χειριστηρίου, επίτρεψε το μικρόφωνο σε αυτή τη σελίδα (το εικονίδιο αριστερά από τη γραμμή διευθύνσεων) και δοκίμασε ξανά. Δεν ηχογραφείται τίποτα.",
-  "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Νιώσε τη: η αριστερή λαβή, η δεξιά λαβή, μετά ο δρόμος, ένα κράσπεδο και ο κινητήρας.",
-  "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Έτοιμο. Τα ένιωσες όλα; Ενεργοποίησε το Full Vibration στην καρτέλα Mods.",
-  "It played on: {device}": "Παίχτηκε στο: {device}",
   "DualSense found: connect it for its trigger effects, rumble and light.": "Βρέθηκε DualSense: σύνδεσέ το για τα εφέ των σκανδαλών, τη δόνηση και το φως.",
-  "A DualSense's light shows your car's underglow colour.": "Το φως του DualSense δείχνει το χρώμα του νέον κάτω από το αυτοκίνητό σου.",
-  "A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.": "Ένα DualSense σε καλώδιο USB νιώθει τον δρόμο, τον κινητήρα, τα κράσπεδα και το νίτρο."
+  "A DualSense's light shows your car's underglow colour.": "Το φως του DualSense δείχνει το χρώμα του νέον κάτω από το αυτοκίνητό σου."
 }

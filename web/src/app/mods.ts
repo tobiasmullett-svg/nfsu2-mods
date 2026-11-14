@@ -147,13 +147,6 @@ export const MODS: readonly Mod[] = [
     online: 'you', files: ['runtime/neonlight.c'],
   },
   {
-    id: 'full-vibration', name: 'Full Vibration', authors: EDITION, links: {},
-    kind: 'edition', uses: 'original', control: { setting: 'full_vibration' },
-    line: N('A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.'),
-    details: 'The controller\'s fine vibration, the kind PS5 games use, in place of its rumble: the engine\'s buzz, the road growing with your speed, kerbs and changes of surface as a rumble strip, crashes, the tyres under hard braking and in fast corners, a knock with each gear change, and nitrous. On a USB cable only: over Bluetooth it rumbles as before. Chrome asks once to use the microphone, which is how the page finds the controller\'s sound card; nothing is recorded. Try it first with Test full vibration under Controls, Controller.',
-    online: 'you', files: ['web/src/input/haptics.ts'],
-  },
-  {
     id: 'tune-presets', name: 'Tuning Presets', authors: EDITION, links: {},
     kind: 'edition', uses: 'original', control: { setting: 'tune_presets', values: ['on', 'always'] },
     line: N('The Dyno\'s setups start from a preset for each kind of race.'),

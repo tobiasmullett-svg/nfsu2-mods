@@ -91,8 +91,6 @@
 #define D3DTEX_ID       28u
 /* a car (the World's list, [player + 4]) */
 #define CAR_RIDE        0x10u         /* its ride (RideInfo) */
-#define CAR_NOS         0x40u         /* its nitrous: +0x414 a full shot, +0x41C what was left as it went on, +0x420 when
-                                       * it went on (G_WORLDTIMER ticks; 0 or 0x7FFFFFFF: none) */
 #define CAR_FWD_SPEED   0x42cu        /* float: its speed, m/s forward */
 #define CAR_SPEED       0x430u        /* float: its speed, m/s, as the engine sound takes it */
 #define CAR_GEAR        0x434u        /* its gear: 0 reverse, 1 neutral, 2 first .. */

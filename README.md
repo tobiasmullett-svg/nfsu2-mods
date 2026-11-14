@@ -18,10 +18,6 @@ What it adds, each on the Mods tab under **DualSense Edition**:
   Rumble**: the controller rumbles under hard braking and in fast corners.
 - **Lightbar Neon:** the light round the touchpad shows your car's underglow colour, at full brightness (a pulsing neon
   breathes, no neon leaves it dark), and follows the neon as you pick it in the Car Specialties shop.
-- **Full Vibration:** on a USB cable, the controller's fine vibration (the kind PS5 games use) in place of its rumble:
-  the engine, the road growing with your speed, kerbs and changes of surface, crashes, the tyres, gear changes and
-  nitrous. Chrome asks once to use the microphone, which is how the page finds the controller's sound card; nothing is
-  recorded. Off at first; try it with Test full vibration under Controls, Controller.
 - **Tuning Presets:** the Dyno's five setups (circuit, drag, drift, Street X, URL) start from a preset for their kind of
   race: suspension, steering ratio, final drive, brake bias, tyre grip and downforce, fitted to the range your car's
   parts allow. On fills a setup you never touched; Always sets the preset's sliders each time a setup opens. The
@@ -50,7 +46,6 @@ archived version, for anyone who wants to add them to their own copy.
 | Triggers and the rumble report | [web/src/input/dualsense.ts](web/src/input/dualsense.ts) |
 | Road Rumble | [web/src/input/roadrumble.ts](web/src/input/roadrumble.ts) |
 | Lightbar Neon: the underglow's colour | [runtime/neonlight.c](runtime/neonlight.c) |
-| Full Vibration | [web/src/input/haptics.ts](web/src/input/haptics.ts) |
 | The offer to connect a DualSense | [web/src/app/dsoffer.ts](web/src/app/dsoffer.ts) |
 | Tuning Presets | [runtime/tunepresets.c](runtime/tunepresets.c) |
 | The game's status the triggers read | [runtime/web/status_web.c](runtime/web/status_web.c) |

@@ -1553,15 +1553,6 @@
   "Join takes you to your friend: their world, their track and their car.": "“เข้าร่วม” จะพาคุณไปหาเพื่อน: ไปยังโลก สนามแข่ง และรถของเพื่อน",
   "{name} is in a part of the city your career hasn't opened yet.": "{name} อยู่ในส่วนของเมืองที่ยังไม่เปิดในโหมดอาชีพของคุณ",
   "{name} could not be found in free roam.": "ไม่พบ {name} ในการขับอิสระ",
-  "Test full vibration": "ทดสอบการสั่นแบบเต็ม",
-  "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "ไม่พบ DualSense ที่ต่อสาย USB: การสั่นแบบละเอียดส่งผ่านบลูทูธไม่ได้",
-  "Windows gives the controller {n} sound channels; its vibration needs 4.": "Windows ให้คอนโทรลเลอร์ {n} ช่องเสียง แต่การสั่นต้องใช้ 4 ช่อง",
-  "This browser can't send sound to the controller.": "เบราว์เซอร์นี้ส่งเสียงไปยังคอนโทรลเลอร์ไม่ได้",
-  "To find the controller's vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.": "หากต้องการหาการสั่นของคอนโทรลเลอร์ ให้อนุญาตไมโครโฟนสำหรับหน้านี้ (ไอคอนทางซ้ายของแถบที่อยู่) แล้วลองอีกครั้ง ไม่มีการบันทึกเสียงใด ๆ",
-  "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "ลองสัมผัส: ด้ามจับซ้าย ด้ามจับขวา แล้วตามด้วยถนน ขอบทาง และเครื่องยนต์",
-  "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "เสร็จแล้ว รู้สึกครบไหม? เปิด Full Vibration ในแท็บม็อด",
-  "It played on: {device}": "เล่นบน: {device}",
   "DualSense found: connect it for its trigger effects, rumble and light.": "พบ DualSense: เชื่อมต่อเพื่อใช้เอฟเฟกต์ทริกเกอร์ การสั่น และไฟ",
-  "A DualSense's light shows your car's underglow colour.": "ไฟของ DualSense จะเป็นสีเดียวกับนีออนใต้ท้องรถของคุณ",
-  "A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.": "DualSense ที่ต่อสาย USB จะสัมผัสได้ถึงถนน เครื่องยนต์ ขอบทาง และไนตรัส"
+  "A DualSense's light shows your car's underglow colour.": "ไฟของ DualSense จะเป็นสีเดียวกับนีออนใต้ท้องรถของคุณ"
 }

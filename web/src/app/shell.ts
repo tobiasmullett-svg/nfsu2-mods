@@ -1208,15 +1208,15 @@ function siteDeps() {
     // (only shown: one that does not read, savefs.ts missing, shows no game keys)
     registry: () => readText(SAVE, 'registry.txt').catch(() => null), ps: () => keySheet?.fam === 'ps' };
 }
-/** our controls' keys as settings.ini has them now (not while a game runs: it keeps the ones it started with), on the
- *  keys' list and in the Site tab */
-/** settings.ini's trigger_strength, road_rumble, lightbar and full_vibration to the DualSense's code (dualsense.ts),
- *  each time the file is read or written */
+/** settings.ini's trigger_strength, road_rumble and lightbar to the DualSense's code (dualsense.ts), each time the file
+ *  is read or written */
 function dualSenseNow() {
   if (!settings) return;
   setDualSenseSettings({ strength: settings.current('trigger_strength'), road: settings.current('road_rumble') !== 'off',
-    lightbar: settings.current('lightbar') !== 'off', vibration: settings.current('full_vibration') === 'on' });
+    lightbar: settings.current('lightbar') !== 'off' });
 }
+/** our controls' keys as settings.ini has them now (not while a game runs: it keeps the ones it started with), on the
+ *  keys' list and in the Site tab */
 function siteKeysNow() {
   if (!session) applySiteKeys(resolveEnv(settingsFile.forGame ?? settingsFile.text, ENVIRONMENT, {}, DEVICE).env);
   siteKeyList($('#keys'));

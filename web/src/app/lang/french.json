@@ -1673,15 +1673,6 @@
   "Join takes you to your friend: their world, their track and their car.": "« Rejoindre » vous emmène auprès de votre ami : dans son monde, sur sa piste et juste derrière sa voiture.",
   "{name} is in a part of the city your career hasn't opened yet.": "{name} est dans une partie de la ville pas encore débloquée dans votre carrière.",
   "{name} could not be found in free roam.": "{name} est introuvable en mode Exploration.",
-  "Test full vibration": "Tester la vibration complète",
-  "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "Aucune DualSense branchée en USB : sa vibration fine ne passe pas par Bluetooth.",
-  "Windows gives the controller {n} sound channels; its vibration needs 4.": "Windows donne {n} canaux audio à la manette ; sa vibration en demande 4.",
-  "This browser can't send sound to the controller.": "Ce navigateur ne peut pas envoyer de son à la manette.",
-  "To find the controller's vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.": "Pour trouver la vibration de la manette, autorisez le micro pour cette page (l'icône à gauche de la barre d'adresse), puis réessayez. Rien n'est enregistré.",
-  "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Ressens : la poignée gauche, la poignée droite, puis la route, un vibreur et le moteur.",
-  "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Terminé. Tu as tout senti ? Active Full Vibration dans l'onglet Mods.",
-  "It played on: {device}": "Joué sur : {device}",
   "DualSense found: connect it for its trigger effects, rumble and light.": "DualSense détectée : connecte-la pour ses effets de gâchettes, ses vibrations et sa lumière.",
-  "A DualSense's light shows your car's underglow colour.": "La lumière d'une DualSense prend la couleur du néon sous ta voiture.",
-  "A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.": "Une DualSense branchée en USB fait sentir la route, le moteur, les vibreurs et la nitro."
+  "A DualSense's light shows your car's underglow colour.": "La lumière d'une DualSense prend la couleur du néon sous ta voiture."
 }

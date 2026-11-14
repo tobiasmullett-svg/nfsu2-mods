@@ -217,10 +217,9 @@ export const KEYS: readonly KeyDef[] = [
   // own (web/src/input/dualsense.ts, roadrumble.ts; shell.ts hands them over), not the runtime's
   { key: 'trigger_strength', env: 'NFSU2_TRIGGER_STRENGTH', kind: 'enum', vals: 'off|light|medium|strong', scope: 'web' },
   { key: 'road_rumble', env: 'NFSU2_ROAD_RUMBLE', kind: 'bool', scope: 'web' },
-  // a DualSense's lightbar in the car's underglow colour (the game's status "car_neon": runtime/neonlight.c), and its
-  // fine vibration through its sound card on a USB cable (web/src/input/haptics.ts): the page's own too
+  // a DualSense's lightbar in the car's underglow colour (the game's status "car_neon": runtime/neonlight.c): the page's
+  // own too
   { key: 'lightbar', env: 'NFSU2_LIGHTBAR', kind: 'bool', scope: 'web' },
-  { key: 'full_vibration', env: 'NFSU2_FULL_VIBRATION', kind: 'bool', scope: 'web' },
   // other players' cars with the mods' looks or as the original game draws them (runtime/stance.c: their stance;
   // runtime/modpacks.c: a mod's parts, their look-alikes, else the stock ones, in free roam's cars and the race's).  Not
   // in bundle.m's table: there a lower-case key, so it reaches the runtime as NFSU2_OTHERS_MOD_PARTS all the same
@@ -415,13 +414,6 @@ export const TEMPLATE = `# NFSU2 settings, read at every launch.
 # the Car Specialties shop), breathing with a pulsing neon, dark with
 # none.  off = the controller's own light.  [NFSU2_LIGHTBAR]
 #lightbar = on
-
-# A DualSense on a USB cable: its fine vibration plays the road, the
-# engine, kerbs, crashes and nitrous, in place of its rumble.  Chrome asks
-# once to use the microphone so the page can find the controller's sound
-# card; nothing is recorded.  Over Bluetooth it rumbles as before.
-# [NFSU2_FULL_VIBRATION]
-#full_vibration = off
 
 # Other players' cars: shown = with the looks they chose with the mods
 # (their stance), as they see them; original = as the original game draws

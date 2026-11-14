@@ -14,7 +14,6 @@ before the release, not guessed.
 ## 2026-11-14 (ec0e165)
 
 - **DualSense Edition:** the controller's light shows your car's underglow colour, and follows it as you pick a neon in the shop (Mods tab: Lightbar Neon).
-- **DualSense Edition:** Full Vibration: on a USB cable, the controller's fine vibration plays the engine, the road, kerbs, crashes, gear changes and nitrous (Mods tab, off at first; try it under Controls, Controller).
 - **DualSense Edition:** a DualSense that isn't connected for its triggers yet gets an offer to connect it, on the start page and over the game's menus.
 
 ## 2026-11-13 (d070d49)
