@@ -47,6 +47,10 @@ fn csp_and_policies() {
     assert!(permissions_policy().starts_with("gamepad=(self), fullscreen=(self), "));
     assert!(permissions_policy().ends_with(", window-management=(), xr-spatial-tracking=()"));
     assert_eq!(permissions_policy().split(", ").count(), 27);
+    // Full Vibration asks for the microphone to find the DualSense's sound card by its name
+    let features: Vec<&str> = permissions_policy().split(", ").collect();
+    assert!(features.contains(&"microphone=(self)"));
+    assert!(features.contains(&"camera=()"));
 }
 
 #[test]
