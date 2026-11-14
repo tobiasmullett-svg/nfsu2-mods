@@ -270,7 +270,9 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
     vbtn.onclick = () => {
       vbtn.disabled = true; vmsg.hidden = false;
       vmsg.textContent = t('Feel it: the left grip, the right grip, then the road, a kerb and the engine.');
-      void testVibration().then(r => { vmsg.textContent = r.ok ? t('Done. Felt all of it? Turn on Full Vibration on the Mods tab.') : why(r); },
+      // and the card it played on: felt nowhere (heard in a headset, say), that says where it went
+      void testVibration().then(
+        r => { vmsg.textContent = r.ok ? `${t('Done. Felt all of it? Turn on Full Vibration on the Mods tab.')} ${t('It played on: {device}', { device: r.device })}` : why(r); },
         () => { vmsg.textContent = t('This browser can\'t send sound to the controller.'); })
         .finally(() => { vbtn.disabled = false; });
     };

@@ -80,3 +80,43 @@ test('the microphone refused, missing or busy: why there are no names, or the na
     globalThis.AudioContext = had;
   }
 });
+
+test('the controller\'s own card of 4 channels: not the system\'s default or call entries, not a 7.1 card', async () => {
+  const out = (deviceId, label) => ({ kind: 'audiooutput', deviceId, label });
+  const all = [
+    out('default', 'Default - Headphones (Realtek(R) Audio)'),
+    out('communications', 'Communications - Speakers (DualSense Wireless Controller)'),
+    out('hs', 'Headphones (7.1 Wireless Controller Headset)'),
+    out('ds', 'Speakers (DualSense Wireless Controller)'),
+  ];
+  let list, channels, opened, closed;
+  const param = () => ({ value: 0, setValueAtTime() {}, setTargetAtTime() {}, cancelScheduledValues() {} });
+  const node = () => new Proxy({}, { get: (o, k) => k in o ? o[k] : (o[k] = ['connect', 'start', 'stop'].includes(k) ? () => {} : param()) });
+  class FakeContext {
+    constructor(o) { this.sinkId = o.sinkId; opened.push(o.sinkId); this.sampleRate = 100; this.currentTime = 0; this.destination = { maxChannelCount: channels[o.sinkId] }; }
+    setSinkId() {}
+    createChannelMerger() { return node(); } createDynamicsCompressor() { return node(); } createGain() { return node(); }
+    createBiquadFilter() { return node(); } createBufferSource() { return node(); } createOscillator() { return node(); }
+    createBuffer(_, n) { const d = new Float32Array(n); return { getChannelData: () => d }; }
+    resume() { return Promise.resolve(); }
+    close() { closed.push(this.sinkId); return Promise.resolve(); }
+  }
+  const open = async (l, ch) => { list = l; channels = ch; opened = []; closed = []; return H.FullVibration.open(false); };
+  const had = globalThis.AudioContext;
+  globalThis.AudioContext = FakeContext;
+  Object.defineProperty(globalThis.navigator, 'mediaDevices', { value: { enumerateDevices: async () => list }, configurable: true });
+  try {
+    const r = await open(all, { default: 8, communications: 8, hs: 8, ds: 4 });
+    assert.equal(r.ok, true);
+    assert.equal(r.vib.label, 'Speakers (DualSense Wireless Controller)');
+    assert.deepEqual(opened, ['hs', 'ds']);       // never the entries that follow Windows' roles
+    assert.deepEqual(closed, ['hs']);             // the 7.1 card let go at once
+    r.vib.close();
+    assert.deepEqual(await open(all.slice(0, 2), { default: 8, communications: 4 }), { ok: false, why: 'none' });
+    assert.deepEqual(opened, []);
+    assert.deepEqual(await open(all, { hs: 8, ds: 2 }), { ok: false, why: 'channels', channels: 2 });
+  } finally {
+    delete globalThis.navigator.mediaDevices;
+    globalThis.AudioContext = had;
+  }
+});

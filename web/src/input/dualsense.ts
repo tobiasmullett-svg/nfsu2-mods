@@ -604,12 +604,12 @@ const STATUS_MS = 15;
 
 /** The Controls sheet's Test full vibration (from its click: Chrome may ask for the microphone, haptics.ts): the
  *  pattern played on the controller's sound card; what stood in the way, if anything. */
-export async function testVibration(): Promise<{ ok: true } | { ok: false; why: VibrationFault; channels?: number }> {
+export async function testVibration(): Promise<{ ok: true; device: string } | { ok: false; why: VibrationFault; channels?: number }> {
   const r = await FullVibration.open(true);
   if (!r.ok) { log(`[vibration] test: ${r.why}${r.channels !== undefined ? ` (${r.channels} channels)` : ''}`); return r; }
   log(`[vibration] test on "${r.vib.label}" (${r.vib.ctx.destination.maxChannelCount} channels, ${r.vib.ctx.sampleRate} Hz)`);
   try { await r.vib.test(); } finally { r.vib.close(); }
-  return { ok: true };
+  return { ok: true, device: r.vib.label };
 }
 
 /** whether this browser can set them (WebHID: Chrome, Edge and Opera on a computer) */

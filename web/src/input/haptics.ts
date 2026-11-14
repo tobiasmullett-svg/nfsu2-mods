@@ -25,6 +25,18 @@
 
 /** the controller's sound card, by the name Windows gives it */
 const CARD = /dualsense|wireless controller/i;
+/** Chrome's entries for the system's default card and its card for calls, not cards of their own */
+const ROLES = new Set(['default', 'communications']);
+
+/** a Web Audio context playing on that output, or null when it cannot */
+async function sinkTo(id: string): Promise<AudioContext | null> {
+  let ctx: AudioContext;
+  try { ctx = new AudioContext({ latencyHint: 'interactive', sinkId: id }); } catch { return null; }
+  if (ctx.sinkId !== id) {
+    try { await ctx.setSinkId(id); } catch { void ctx.close(); return null; }
+  }
+  return ctx;
+}
 
 /** why there is no vibration: no Web Audio output choice here; the microphone refused (so no names); no such card (not
  *  on a cable); names not shown yet (not asked); the card with fewer than 4 channels */
@@ -136,18 +148,22 @@ export class FullVibration {
   static async open(ask: boolean): Promise<{ ok: true; vib: FullVibration } | { ok: false; why: VibrationFault; channels?: number }> {
     const list = await FullVibration.outputs(ask);
     if (typeof list === 'string') return { ok: false, why: list };
-    const dev = list.find(d => CARD.test(d.label));
-    if (!dev) return { ok: false, why: list.some(d => d.label) ? 'none' : 'permission' };
-    let ctx: AudioContext;
-    try { ctx = new AudioContext({ latencyHint: 'interactive', sinkId: dev.deviceId }); }
-    catch { return { ok: false, why: 'none' }; }
-    if (ctx.sinkId !== dev.deviceId) {
-      try { await ctx.setSinkId(dev.deviceId); } catch { void ctx.close(); return { ok: false, why: 'none' }; }
+    // the card itself: Chrome's "Default - " and "Communications - " entries follow whichever card Windows gives those
+    // roles (a DualSense plugged in often becomes the one for calls), and Chrome may play those on another
+    const cards = list.filter(d => CARD.test(d.label) && !ROLES.has(d.deviceId));
+    if (!cards.length) return { ok: false, why: list.some(d => d.label) ? 'none' : 'permission' };
+    let fewer: number | undefined;
+    for (const dev of cards) {
+      const ctx = await sinkTo(dev.deviceId);
+      if (!ctx) continue;
+      // a DualSense has 4 channels: with more it is another card (a headset's 7.1 would play the grips' channels as its
+      // centre and bass, in both ears)
+      const max = ctx.destination.maxChannelCount;
+      if (max !== 4) { void ctx.close(); if (max < 4) fewer = max; continue; }
+      try { await ctx.resume(); } catch { /* it starts with the next click on the page */ }
+      return { ok: true, vib: new FullVibration(ctx, dev.label) };
     }
-    const max = ctx.destination.maxChannelCount;
-    if (max < 4) { void ctx.close(); return { ok: false, why: 'channels', channels: max }; }
-    try { await ctx.resume(); } catch { /* it starts with the next click on the page */ }
-    return { ok: true, vib: new FullVibration(ctx, dev.label) };
+    return fewer !== undefined ? { ok: false, why: 'channels', channels: fewer } : { ok: false, why: 'none' };
   }
 
   private constructor(readonly ctx: AudioContext, readonly label: string) {

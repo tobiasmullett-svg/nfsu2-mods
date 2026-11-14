@@ -1676,6 +1676,7 @@
   "To find the controller's vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.": "Per trovare la vibrazione del controller, consenti il microfono a questa pagina (l'icona a sinistra della barra degli indirizzi), poi riprova. Non viene registrato nulla.",
   "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Senti: l'impugnatura sinistra, quella destra, poi la strada, un cordolo e il motore.",
   "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Fatto. Hai sentito tutto? Attiva Full Vibration nella scheda Mod.",
+  "It played on: {device}": "Riprodotto su: {device}",
   "DualSense found: connect it for its trigger effects, rumble and light.": "DualSense trovato: collegalo per gli effetti dei grilletti, la vibrazione e la luce.",
   "A DualSense's light shows your car's underglow colour.": "La luce di un DualSense mostra il colore del neon sotto la tua auto.",
   "A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.": "Un DualSense su cavo USB sente la strada, il motore, i cordoli e il nitro."
