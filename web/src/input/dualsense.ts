@@ -29,11 +29,19 @@
 // and in a fast corner, from the brake, the stick and the car's speed (the game's status has no word for the tyres'
 // slip).  How strong all of it is, is the player's: settings.ini trigger_strength (Off, Light, Medium, Strong), on the
 // Mods tab's row and the Controls sheet both.
+// The lightbar shows the car's underglow (settings.ini lightbar; the game's status "car_neon", runtime/neonlight.c): its
+// colour at full brightness, breathing for a pulsing neon, dark for none; in the garage and the shops too, so it follows
+// the neon as it is picked.  The report's lightbar is set up once first (hid-playstation.c dualsense_reset_leds: over
+// Bluetooth the controller keeps the colour it came on with until then).
+// Full Vibration (settings.ini full_vibration, haptics.ts) plays the car on the controller's actuators through its sound
+// card, on a USB cable; while it does, the report's motors stay still.
 // A game built before those status words has only "drive": the springs alone.  Outside driving (menus, the pause, a
 // hidden or unfocused page, the game's end) both triggers are let go.
 
 import type { PadSnapshot } from './gamepad';
 import { roadRumble, type Rumble } from './roadrumble';
+import { FullVibration, VibrationDriver, type VibrationFault } from './haptics';
+export type { VibrationFault } from './haptics';
 export { roadRumble, type RoadInput, type Rumble } from './roadrumble';
 import { PAD_AXIS_LT, PAD_AXIS_LX, PAD_AXIS_RT } from './proto';
 
@@ -103,15 +111,27 @@ export function crc32(bytes: Uint8Array): number {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-/** The output report that sets both triggers and nothing else: its id and the bytes after it (what sendReport takes).
- *  bluetooth: report 0x31 with seq (0..15) and the CRC, else report 0x02. */
-export function triggerReport(r2: TriggerEffect, l2: TriggerEffect, bluetooth: boolean, seq = 0, rumble?: Rumble): { id: number; data: Uint8Array } {
+/** the lightbar in a report: its set-up (once, before the first colour: the controller lets go of its own light,
+ *  hid-playstation.c dualsense_reset_leds), or a colour (0..255 each) */
+export type LightCmd = { setup: true } | { rgb: readonly [number, number, number] };
+
+/** The output report that sets both triggers, and the motors and the lightbar when given: its id and the bytes after it
+ *  (what sendReport takes).  bluetooth: report 0x31 with seq (0..15) and the CRC, else report 0x02. */
+export function triggerReport(r2: TriggerEffect, l2: TriggerEffect, bluetooth: boolean, seq = 0, rumble?: Rumble,
+  light?: LightCmd): { id: number; data: Uint8Array } {
   const common = new Uint8Array(47);
   common[0] = 0x04 | 0x08;                    // what counts: R2's effect, L2's effect
   if (rumble) {
     common[0] |= 0x01 | 0x02;                 // and the two motors, as a DualShock 4's ("compatible vibration")
     common[2] = level(rumble.weak);           // the right motor: the small, fast one
     common[3] = level(rumble.strong);         // the left motor: the big, slow one
+  }
+  if (light && 'setup' in light) {
+    common[38] = 0x02;                        // what counts of the lights' part: the lightbar's set-up
+    common[41] = 0x02;                        // ... its light let go, faded out
+  } else if (light) {
+    common[1] |= 0x04;                        // the lightbar's colour
+    common[44] = light.rgb[0] & 0xff; common[45] = light.rgb[1] & 0xff; common[46] = light.rgb[2] & 0xff;
   }
   common.set(triggerBytes(r2), 10);
   common.set(triggerBytes(l2), 21);
@@ -151,15 +171,22 @@ export interface TriggerInput {
 export type Strength = 'off' | 'light' | 'medium' | 'strong';
 export const STRENGTHS: Readonly<Record<Strength, number>> = { off: 0, light: 0.45, medium: 0.7, strong: 1 };
 const isStrength = (v: string): v is Strength => Object.hasOwn(STRENGTHS, v);
-let strength: Strength = 'strong', road = true;
+let strength: Strength = 'strong', road = true, lightbar = true, vibration = false, settled = false;
 /** what writes a pick into settings.ini (shell.ts: the settings panel), so the Mods tab's row and the file agree */
 let writer: ((v: Strength) => void) | null = null;
 const listeners = new Set<(v: Strength) => void>();
 export function triggerStrength(): Strength { return strength; }
-/** the settings as settings.ini has them (shell.ts, each time it is read or written): trigger_strength, road_rumble */
-export function setDualSenseSettings(s: { strength: string; road: boolean }) {
+/** the settings as settings.ini has them (shell.ts, each time it is read or written): trigger_strength, road_rumble,
+ *  lightbar, full_vibration.  Full Vibration switched on (not as the file is first read): Chrome is asked at once
+ *  whether the page may see the sound cards' names (haptics.ts), while the click that switched it is fresh. */
+export function setDualSenseSettings(s: { strength: string; road: boolean; lightbar?: boolean; vibration?: boolean }) {
   const v = isStrength(s.strength) ? s.strength : 'strong';
   road = s.road;
+  lightbar = s.lightbar ?? true;
+  const vib = s.vibration ?? false;
+  if (vib && !vibration && settled) void FullVibration.outputs(true).catch(() => {});
+  vibration = vib;
+  settled = true;
   if (v === strength) return;
   strength = v;
   for (const f of listeners) f(v);
@@ -170,6 +197,20 @@ export function setTriggerStrength(v: Strength) {
 }
 export function onTriggerStrength(f: (v: Strength) => void): () => void { listeners.add(f); return () => listeners.delete(f); }
 export function setStrengthWriter(f: ((v: Strength) => void) | null) { writer = f; }
+
+/** a pulsing neon's breath on the lightbar (ms) */
+const BREATH_MS = 1600;
+/** The lightbar for the game's "car_neon" (runtime/neonlight.c, the car's underglow): null leaves it as it is (a game
+ *  that does not say, or no car: -1); else the neon's colour at full brightness (the game's are at half: RED 128, 0, 0;
+ *  PURPLE 72, 31, 80), dark for none (0).  A pulsing neon (0x1000000) breathes, in tenths so the reports stay few. */
+export function neonLight(v: number | undefined, now: number): [number, number, number] | null {
+  if (v === undefined || !(v >= 0)) return null;
+  const c = v % 0x1000000, r = (c >> 16) & 0xff, g = (c >> 8) & 0xff, b = c & 0xff, top = Math.max(r, g, b);
+  if (!top) return [0, 0, 0];
+  let k = 255 / top;
+  if (v >= 0x1000000) k *= 0.15 + 0.85 * Math.round(5 + 5 * Math.cos(2 * Math.PI * (now % BREATH_MS) / BREATH_MS)) / 10;
+  return [Math.round(r * k), Math.round(g * k), Math.round(b * k)];
+}
 
 /** from a zone on, one strength */
 const from = (zone: number, s: number) => Array.from({ length: 10 }, (_, i) => i >= zone ? s : 0);
@@ -378,6 +419,12 @@ class Pad {
   rumble: Rumble = { strong: 0, weak: 0 };
   /** the road's rumble (roadRumble), played with the game's: the stronger of the two on each motor */
   road: Rumble = { strong: 0, weak: 0 };
+  /** the lightbar's colour (null: left as it is) and whether its set-up went out */
+  light: [number, number, number] | null = null;
+  private lit = false;
+  /** Full Vibration plays on this controller (haptics.ts): its motors still, once told so (stilled) */
+  private vibrating = false;
+  private stilled = false;
 
   /** over Bluetooth: the controller as the game's gamepad, read from its reports here (BtGamepad) */
   bt: BtGamepad | null = null;
@@ -403,15 +450,23 @@ class Pad {
    *  every RESEND_MS: a controller that slept and woke has none */
   set(r2: TriggerEffect, l2: TriggerEffect, force = false) {
     if (!this.dev.opened) return;
-    const rumble = { strong: Math.max(this.rumble.strong, this.road.strong), weak: Math.max(this.rumble.weak, this.road.weak) };
-    const key = `${triggerBytes(r2).join()}|${triggerBytes(l2).join()}|${level(rumble.strong)},${level(rumble.weak)}`, now = performance.now(), since = now - this.sentAt;
+    let rumble: Rumble | undefined = { strong: Math.max(this.rumble.strong, this.road.strong), weak: Math.max(this.rumble.weak, this.road.weak) };
+    if (this.vibrating) rumble = this.stilled ? undefined : { strong: 0, weak: 0 };
+    const light: LightCmd | undefined = !this.light ? undefined : this.lit ? { rgb: this.light } : { setup: true };
+    const key = `${triggerBytes(r2).join()}|${triggerBytes(l2).join()}|${rumble ? `${level(rumble.strong)},${level(rumble.weak)}` : '-'}|${
+      !light ? '-' : 'setup' in light ? 'setup' : light.rgb.join()}`, now = performance.now(), since = now - this.sentAt;
     if (!force && (key === this.sent ? since < RESEND_MS : since < SEND_MS)) return;
     this.sent = key; this.sentAt = now;
-    const { id, data } = triggerReport(r2, l2, this.bluetooth, this.seq = (this.seq + 1) & 0xf, rumble);
+    if (light && 'setup' in light) this.lit = true;
+    if (this.vibrating && rumble) this.stilled = true;
+    const { id, data } = triggerReport(r2, l2, this.bluetooth, this.seq = (this.seq + 1) & 0xf, rumble, light);
     this.queue = this.queue.then(() => this.dev.sendReport(id, data as BufferSource)).catch(err => {
       if (!this.failed) { this.failed = true; log(`[pad] ${this.name}: its triggers cannot be set: ${(err as Error)?.message ?? err}`); }
     });
   }
+
+  /** Full Vibration on this controller or not: its motors are told to stop once, then left out of the report */
+  setVibrating(on: boolean) { if (on !== this.vibrating) { this.vibrating = on; this.stilled = false; } }
 
   /** the triggers let go and the motors still */
   quiet() { this.rumble = { strong: 0, weak: 0 }; this.road = { strong: 0, weak: 0 }; this.set(TRIGGER_OFF, TRIGGER_OFF, true); }
@@ -506,34 +561,56 @@ export class TriggerDriver {
   private feel = new TriggerFeel();
   private last: ReadonlyMap<string, number> | null = null;
   private readAt = 0;
+  /** Full Vibration (haptics.ts), while its switch is on and the controller's sound card is there */
+  private vibration = new VibrationDriver(s => log(s));
 
   constructor(private status: () => ReadonlyMap<string, number> | null) {}
 
   update(driverId: string | null, s: PadSnapshot, hit: number) {
-    if (!pads.size) return;
+    if (!pads.size) { this.vibration.close(); return; }
     const now = performance.now();
     if (now - this.readAt >= STATUS_MS) { this.readAt = now; this.last = this.status() ?? this.last; }
     const st = this.last;
     const shown = typeof document === 'undefined' || (document.visibilityState === 'visible' && document.hasFocus());
     const mine = !!driverId && isDualSense(driverId);
-    const drive = mine ? st?.get('drive') ?? 0 : 0, scale = STRENGTHS[strength];
-    const speed = st?.get('car_speed'), gear = st?.get('car_gear'), brake = s.axes[PAD_AXIS_LT] ?? 0;
-    const { r2, l2 } = this.feel.effects({
-      now, drive, shown, speed, rpm: st?.get('car_rpm'), gear,
-      throttle: s.axes[PAD_AXIS_RT] ?? 0, brake, hit, scale,
-    });
+    const drive = mine ? st?.get('drive') ?? 0 : 0, scale = STRENGTHS[strength], full = strength === 'off' ? 1 : scale;
+    const speed = st?.get('car_speed'), rpm = st?.get('car_rpm'), gear = st?.get('car_gear');
+    const brake = s.axes[PAD_AXIS_LT] ?? 0, throttle = s.axes[PAD_AXIS_RT] ?? 0, driving = (drive & 3) !== 0 && shown;
+    const { r2, l2 } = this.feel.effects({ now, drive, shown, speed, rpm, gear, throttle, brake, hit, scale });
     // the road's rumble: its own switch (road_rumble), as strong as the triggers (full with them off)
-    const r = road ? roadRumble({ driving: (drive & 3) !== 0 && shown, speed, gear, brake, steer: s.axes[PAD_AXIS_LX] ?? 0,
-      scale: strength === 'off' ? 1 : scale }) : { strong: 0, weak: 0 };
+    const r = road ? roadRumble({ driving, speed, gear, brake, steer: s.axes[PAD_AXIS_LX] ?? 0, scale: full }) : { strong: 0, weak: 0 };
     for (const p of pads.values()) p.road = r;
+    // the lightbar: the car's underglow, kept through a moment without a car (a load); left alone with its switch off
+    const neon = lightbar ? neonLight(st?.get('car_neon'), now) : null;
+    for (const p of pads.values()) if (neon || !lightbar) p.light = neon;
+    // Full Vibration: on a cable, in place of the motors
+    this.vibration.want(vibration, now);
+    const vib = this.vibration.active;
+    for (const p of pads.values()) p.setVibrating(vib && p.transport === 'USB');
+    if (vib) {
+      let weak = 0;
+      for (const p of pads.values()) weak = Math.max(weak, p.rumble.weak);
+      this.vibration.update({ driving, speed, rpm, gear, throttle, surface: weak, hit, tyres: Math.max(r.strong, r.weak),
+        nos: (st?.get('car_nos') ?? 0) > 0, scale: full });
+    }
     setTriggers(r2, l2);
   }
 
-  /** the game ended: the triggers let go */
-  stop() { for (const p of pads.values()) p.quiet(); }
+  /** the game ended: the triggers let go, the vibration stops */
+  stop() { for (const p of pads.values()) p.quiet(); this.vibration.close(); }
 }
 /** how often the game's status is read for the triggers (ms) */
 const STATUS_MS = 15;
+
+/** The Controls sheet's Test full vibration (from its click: Chrome may ask for the microphone, haptics.ts): the
+ *  pattern played on the controller's sound card; what stood in the way, if anything. */
+export async function testVibration(): Promise<{ ok: true } | { ok: false; why: VibrationFault; channels?: number }> {
+  const r = await FullVibration.open(true);
+  if (!r.ok) { log(`[vibration] test: ${r.why}${r.channels !== undefined ? ` (${r.channels} channels)` : ''}`); return r; }
+  log(`[vibration] test on "${r.vib.label}" (${r.vib.ctx.destination.maxChannelCount} channels, ${r.vib.ctx.sampleRate} Hz)`);
+  try { await r.vib.test(); } finally { r.vib.close(); }
+  return { ok: true };
+}
 
 /** whether this browser can set them (WebHID: Chrome, Edge and Opera on a computer) */
 export const dualSensePossible = () => !!hid();

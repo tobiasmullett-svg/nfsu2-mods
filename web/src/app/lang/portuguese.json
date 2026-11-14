@@ -1672,5 +1672,14 @@
   "Street X: Parkade": "Street X: Estacionamento",
   "Join takes you to your friend: their world, their track and their car.": "Entrar leva você até seu amigo: o mundo, a pista e o carro dele.",
   "{name} is in a part of the city your career hasn't opened yet.": "{name} está numa parte da cidade que ainda não foi liberada na sua carreira.",
-  "{name} could not be found in free roam.": "Não foi possível encontrar {name} no Modo Livre."
+  "{name} could not be found in free roam.": "Não foi possível encontrar {name} no Modo Livre.",
+  "Test full vibration": "Testar vibração completa",
+  "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "Nenhum DualSense encontrado num cabo USB: a vibração fina não passa por Bluetooth.",
+  "Windows gives the controller {n} sound channels; its vibration needs 4.": "O Windows dá ao controle {n} canais de som; a vibração precisa de 4.",
+  "This browser can't send sound to the controller.": "Este navegador não consegue enviar som para o controle.",
+  "Chrome needs the microphone permission to find the controller's vibration. Nothing is recorded.": "O Chrome precisa da permissão do microfone para encontrar a vibração do controle. Nada é gravado.",
+  "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Sinta: o punho esquerdo, o direito, depois a estrada, uma zebra e o motor.",
+  "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Pronto. Sentiu tudo? Ative Full Vibration na aba Mods.",
+  "A DualSense's light shows your car's underglow colour.": "A luz de um DualSense mostra a cor do neon embaixo do seu carro.",
+  "A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.": "Um DualSense num cabo USB sente a estrada, o motor, as zebras e o nitro."
 }

@@ -14,7 +14,10 @@
 
 import { allPads, drivingPad, familyOf, PAD_DRIVER_EVENT } from '../input/gamepad';
 import { connectSteamPad, steamPadsPicked, steamPadsPossible } from '../input/steampad';
-import { connectDualSense, dualSensePicked, dualSensePossible, onTriggerStrength, setTriggerStrength, triggerStrength, type Strength } from '../input/dualsense';
+import {
+  connectDualSense, dualSensePicked, dualSensePossible, onTriggerStrength, setTriggerStrength, testVibration, triggerStrength, type Strength,
+  type VibrationFault,
+} from '../input/dualsense';
 import { PADF_PLAYSTATION } from '../input/proto';
 import { wheelSection } from './wheel-setup';
 import { askMotion, levelHorizon, menuSize, nitroSteerSide, onSteering, setSteering, steering, STEERING, steeringName, touchPosition,
@@ -204,7 +207,9 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
       <label class="opt"><input type="radio" name="${id}-dss" value="light">${esc(t('Light'))}</label>
       <label class="opt"><input type="radio" name="${id}-dss" value="medium">${esc(t('Medium'))}</label>
       <label class="opt"><input type="radio" name="${id}-dss" value="strong">${esc(t('Strong'))}</label>
-    </div>` : ''}
+    </div>
+    <div class="row"><button type="button" class="btn" data-dsvib>${esc(t('Test full vibration'))}</button></div>
+    <p class="hint ds-vib" role="status" hidden></p>` : ''}
     </div>`;
     pad.append(wheel.box, ...kept);
     svg = pad.querySelector('svg')!;
@@ -254,6 +259,21 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
     for (const r of strengths) r.onchange = () => { if (r.checked) setTriggerStrength(r.value as Strength); };
     offStrength?.();
     offStrength = strengths.length ? onTriggerStrength(showStrength) : null;
+    // Full Vibration's test (haptics.ts): the pattern on the controller's sound card, or what stands in its way
+    const vbtn = pad.querySelector<HTMLButtonElement>('[data-dsvib]'), vmsg = pad.querySelector<HTMLElement>('.ds-vib');
+    if (!vbtn || !vmsg) return;
+    const why = (r: { why: VibrationFault; channels?: number }) =>
+      r.why === 'none' ? t('No DualSense found on a USB cable: its fine vibration can\'t go over Bluetooth.')
+        : r.why === 'channels' ? t('Windows gives the controller {n} sound channels; its vibration needs 4.', { n: r.channels ?? 2 })
+        : r.why === 'unsupported' ? t('This browser can\'t send sound to the controller.')
+        : t('Chrome needs the microphone permission to find the controller\'s vibration. Nothing is recorded.');
+    vbtn.onclick = () => {
+      vbtn.disabled = true; vmsg.hidden = false;
+      vmsg.textContent = t('Feel it: the left grip, the right grip, then the road, a kerb and the engine.');
+      void testVibration().then(r => { vmsg.textContent = r.ok ? t('Done. Felt all of it? Turn on Full Vibration on the Mods tab.') : why(r); },
+        () => { vmsg.textContent = t('This browser can\'t send sound to the controller.'); })
+        .finally(() => { vbtn.disabled = false; });
+    };
   };
   /** a label too long for the drawing (another language's words) a little smaller, so it stays inside the 336 px;
    *  measured once the tab shows (a hidden one has no size).  Measured again after each change: a renderer that draws

@@ -1206,11 +1206,12 @@ function siteDeps() {
 }
 /** our controls' keys as settings.ini has them now (not while a game runs: it keeps the ones it started with), on the
  *  keys' list and in the Site tab */
-/** settings.ini's trigger_strength and road_rumble to the DualSense's code (dualsense.ts), each time the file is read or
- *  written */
+/** settings.ini's trigger_strength, road_rumble, lightbar and full_vibration to the DualSense's code (dualsense.ts),
+ *  each time the file is read or written */
 function dualSenseNow() {
   if (!settings) return;
-  setDualSenseSettings({ strength: settings.current('trigger_strength'), road: settings.current('road_rumble') !== 'off' });
+  setDualSenseSettings({ strength: settings.current('trigger_strength'), road: settings.current('road_rumble') !== 'off',
+    lightbar: settings.current('lightbar') !== 'off', vibration: settings.current('full_vibration') === 'on' });
 }
 function siteKeysNow() {
   if (!session) applySiteKeys(resolveEnv(settingsFile.forGame ?? settingsFile.text, ENVIRONMENT, {}, DEVICE).env);

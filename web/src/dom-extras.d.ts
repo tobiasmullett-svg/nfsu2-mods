@@ -11,3 +11,11 @@ interface Atomics {
 interface FileSystemFileHandle {
   createSyncAccessHandle(options?: { mode?: 'readwrite' | 'read-only' | 'readwrite-unsafe' }): Promise<FileSystemSyncAccessHandle>;
 }
+
+/** an AudioContext's output device, of the Web Audio spec (Chrome 110): the libraries have it on media elements only
+ *  (input/haptics.ts: a DualSense's vibration is its sound card's channels 3 and 4) */
+interface AudioContext {
+  readonly sinkId: string | { type: 'none' };
+  setSinkId(sinkId: string | { type: 'none' }): Promise<void>;
+}
+interface AudioContextOptions { sinkId?: string | { type: 'none' } }

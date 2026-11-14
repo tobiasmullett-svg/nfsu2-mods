@@ -51,7 +51,6 @@ uint32_t language_text(uint32_t hash);
 #define SLOT_VINYL     0x40u
 #define CAT_HIDDEN     0x1cu
 #define ICON_SPONSOR   0x93ec1ce9u   /* the Sponsor category's icon (the NFSU2 logo) */
-#define FN_PART_NAME   0x00610000u   /* thiscall part () -> its name */
 #define P_KIND         4u
 #define P_CAT          5u
 #define CAT_NONE       0x1fu

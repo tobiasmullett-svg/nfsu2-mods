@@ -1552,5 +1552,14 @@
   "Street X: Parkade": "스트리트 X: 주차 빌딩",
   "Join takes you to your friend: their world, their track and their car.": "'참가'를 누르면 친구에게 가요: 친구의 월드, 트랙, 차가 있는 곳으로.",
   "{name} is in a part of the city your career hasn't opened yet.": "{name} 님은 내 커리어에서 아직 열리지 않은 도시 지역에 있어요.",
-  "{name} could not be found in free roam.": "자유 주행에서 {name} 님을 찾지 못했어요."
+  "{name} could not be found in free roam.": "자유 주행에서 {name} 님을 찾지 못했어요.",
+  "Test full vibration": "전체 진동 테스트",
+  "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "USB 케이블로 연결된 DualSense를 찾지 못했습니다: 섬세한 진동은 블루투스로 전달되지 않습니다.",
+  "Windows gives the controller {n} sound channels; its vibration needs 4.": "Windows가 컨트롤러에 {n}개의 오디오 채널을 주고 있습니다. 진동에는 4개가 필요합니다.",
+  "This browser can't send sound to the controller.": "이 브라우저는 컨트롤러로 소리를 보낼 수 없습니다.",
+  "Chrome needs the microphone permission to find the controller's vibration. Nothing is recorded.": "컨트롤러의 진동을 찾으려면 Chrome에 마이크 권한이 필요합니다. 아무것도 녹음되지 않습니다.",
+  "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "느껴 보세요: 왼쪽 그립, 오른쪽 그립, 그다음 노면, 연석, 엔진.",
+  "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "완료. 모두 느껴졌나요? 모드 탭에서 Full Vibration을 켜세요.",
+  "A DualSense's light shows your car's underglow colour.": "DualSense의 조명이 차 아래 네온 색으로 바뀝니다.",
+  "A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.": "USB 케이블로 연결한 DualSense로 노면, 엔진, 연석, 니트로를 느낄 수 있습니다."
 }

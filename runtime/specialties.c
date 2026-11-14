@@ -63,7 +63,6 @@ void sub_00560550(CPU *c);
 #define G_COL_NEEDLE    0x00839c2cu   /* ... 165 */
 #define G_LIST_KIND     0x00838998u   /* the kind of list UI_ICEMAIN.fng makes (0x5593E0) */
 #define ROW_ICE_PLACE   0x007f891cu   /* UI_ICEMAIN.fng's screen-table row (0x7F890C) +0x10 */
-#define RIDE_PARTS      0x590u
 #define SLOT_HUD        0xa3u
 #define SLOT_BACKING    0xa4u
 #define SLOT_NEEDLE     0xa5u

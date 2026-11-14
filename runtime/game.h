@@ -77,6 +77,9 @@
 #define CARTYPE_SIZE    0x890u        /* a CarTypeInfo's size */
 #define CARTYPE_TEXNAME 0x20u         /* ... the name its textures go by ("350Z": CARS/350Z/, 350Z_<texture>) */
 #define G_CARPARTDB     0x008a2b68u   /* the car part database */
+#define FN_PART_ATTR    0x0061b500u   /* thiscall CarPart (attribute's name hash, 0) -> its value (0: none) */
+#define FN_PART_NAME    0x00610000u   /* thiscall CarPart () -> its name */
+#define RIDE_PARTS      0x590u        /* a ride (RideInfo): its parts, a CarPart* for each of its 170 slots (+4 x slot) */
 
 /* ---- textures ------------------------------------------------------------ */
 /* a TextureInfo: +0 its platform record (+0x18 the port's D3D texture object, com.c: +28 its GPU texture id) */
@@ -87,6 +90,9 @@
 #define PLAT_D3DTEX     0x18u
 #define D3DTEX_ID       28u
 /* a car (the World's list, [player + 4]) */
+#define CAR_RIDE        0x10u         /* its ride (RideInfo) */
+#define CAR_NOS         0x40u         /* its nitrous: +0x414 a full shot, +0x41C what was left as it went on, +0x420 when
+                                       * it went on (G_WORLDTIMER ticks; 0 or 0x7FFFFFFF: none) */
 #define CAR_FWD_SPEED   0x42cu        /* float: its speed, m/s forward */
 #define CAR_SPEED       0x430u        /* float: its speed, m/s, as the engine sound takes it */
 #define CAR_GEAR        0x434u        /* its gear: 0 reverse, 1 neutral, 2 first .. */

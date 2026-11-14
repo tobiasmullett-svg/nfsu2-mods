@@ -73,6 +73,7 @@ void mpcredit_frame(CPU *c);
 int  roam_asipeer_frame(CPU *c);           /* 1: the Windows plugin under Unicorn took roam_game_frame's place */
 void roam_game_frame(CPU *c);
 void racehorn_frame(CPU *c);
+void neonlight_frame(CPU *c);            /* the underglow's colour for the page (a DualSense's lightbar) */
 void racenet_frame(CPU *c);
 void optslider_frame(CPU *c);
 void stance_frame(CPU *c);

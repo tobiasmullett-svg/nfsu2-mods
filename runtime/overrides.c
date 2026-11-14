@@ -1611,7 +1611,6 @@ void sub_00631e20(CPU *c){
 #define RI_PURGE_HOOD   0x4c0u        /* render info: the hood's purge emitters (a list: +0 the first, +4 the last) */
 #define RI_PURGE_COLOUR 0x2d49u       /* ...+0 the hood's shared colour, +1 the wheels' (int8, -1 none) */
 #define RIDE_NOS_PURGE  0x818u        /* RideInfo: ride slot 0xA2's part (+0x590 + 4 x 0xA2) */
-#define FN_PART_ATTR    0x0061b500u   /* thiscall CarPart (attribute's name hash, 0) -> its value (0: none) */
 #define FN_PURGE_TINT   0x0048b920u   /* cdecl (emitter list, colour entry, hue, saturation, luminance) */
 static uint32_t bstring_hash(const char *s){ uint32_t h = 0xffffffffu; for (; *s; s++) h = h * 33u + (uint8_t)*s; return h; }   /* 0x43DB50 */
 void sub_00634800_orig(CPU *c);

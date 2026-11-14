@@ -70,7 +70,6 @@ void sub_0049c690(CPU *c);                       /* ... the Options screen's */
 #define CARTYPE_HASH   0xd0u         /* a car type's hash: a car record's car type */
 #define RI_WHEEL_Y     0x400u        /* ... each wheel's sideways place, two floats (the car's left: below 0) */
 #define RI_TIRE_W      0x420u        /* ... each wheel's tire width, m */
-#define CAR_RIDE       0x10u         /* car: its ride */
 #define RIDE_COILOVERS 0x363u        /* ride: the two suspension parts the game's camber comes from (0x59A420) */
 #define RIDE_PLATES    0x364u
 #define PL_CAR         4u            /* Player: its car */

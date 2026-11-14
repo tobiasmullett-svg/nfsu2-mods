@@ -179,6 +179,64 @@ test('a controller picked before opens while the game runs, takes the effects wh
   } finally { delete globalThis.navigator.hid; }
 });
 
+test('the lightbar in the report: its set-up first, then a colour, on a cable and over Bluetooth', () => {
+  const off = D.TRIGGER_OFF;
+  const setup = D.triggerReport(off, off, false, 0, undefined, { setup: true }).data;
+  assert.equal(setup[1], 0); assert.equal(setup[38], 0x02); assert.equal(setup[41], 0x02);   // the set-up: let go, faded
+  const c = D.triggerReport(off, off, false, 0, undefined, { rgb: [230, 99, 255] }).data;
+  assert.equal(c[1], 0x04); assert.deepEqual([...c.slice(44, 47)], [230, 99, 255]); assert.equal(c[38], 0);
+  assert.equal(c[0], 0x0c);                                                                   // the triggers' bits stay
+  const bt = D.triggerReport(off, off, true, 3, undefined, { rgb: [230, 99, 255] }).data;
+  assert.deepEqual([...bt.slice(2, 49)], [...c]);
+});
+
+test('the underglow on the lightbar: full brightness, dark for none, left alone without a car, a pulse that breathes', () => {
+  assert.equal(D.neonLight(undefined, 0), null);                             // a game that does not say
+  assert.equal(D.neonLight(-1, 0), null);                                    // no car (a load): as it is
+  assert.deepEqual(D.neonLight(0, 0), [0, 0, 0]);                            // NO NEON
+  assert.deepEqual(D.neonLight(72 << 16 | 31 << 8 | 80, 0), [230, 99, 255]); // PURPLE (72, 31, 80)
+  assert.deepEqual(D.neonLight(128 << 16, 0), [255, 0, 0]);                  // RED (128, 0, 0)
+  assert.deepEqual(D.neonLight(255 << 16 | 150 << 8, 0), [255, 150, 0]);     // GOLD
+  const pulse = 0x1000000 + (128 << 16);
+  assert.deepEqual(D.neonLight(pulse, 0), [255, 0, 0]);                      // the breath's top
+  const low = D.neonLight(pulse, 800)[0];                                    // half a breath later, its bottom
+  assert.ok(low > 20 && low < 60, String(low));
+});
+
+test('the driver sets the lightbar up once, then gives it the underglow, and keeps it through a load', async () => {
+  const sent = [];
+  const dev = Object.assign(new EventTarget(), {
+    opened: false, vendorId: 0x054c, productId: 0x0ce6, productName: 'DualSense Wireless Controller',
+    collections: [{ outputReports: [{ reportId: 0x02 }] }],                       // a cable's
+    async open() { this.opened = true; }, async close() { this.opened = false; },
+    async sendReport(id, data) { sent.push({ id, data: Uint8Array.from(data) }); },
+  });
+  const hid = Object.assign(new EventTarget(), { getDevices: async () => [dev], requestDevice: async () => [dev] });
+  Object.defineProperty(globalThis.navigator, 'hid', { value: hid, configurable: true });
+  globalThis.addEventListener ??= () => {}; globalThis.removeEventListener ??= () => {};
+  const tick = () => new Promise(r => setTimeout(r, 5)), later = () => new Promise(r => setTimeout(r, 40));
+  try {
+    const done = D.useDualSense(() => {});
+    await tick();
+    const status = new Map([['drive', 0], ['car_neon', 72 << 16 | 31 << 8 | 80]]);
+    const t = new D.TriggerDriver(() => status);
+    const pad = { connected: true, buttons: 0, axes: [0, 0, 0, 0, 0, 0], family: 2, name: 'DualSense', index: 0 };
+    const id = 'DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)';
+    t.update(id, pad, 0); await tick();
+    assert.equal(sent.length, 1); assert.equal(sent[0].data[38], 0x02);      // the set-up
+    await later(); t.update(id, pad, 0); await tick();
+    assert.equal(sent.length, 2); assert.equal(sent[1].data[1], 0x04); assert.deepEqual([...sent[1].data.slice(44, 47)], [230, 99, 255]);
+    status.set('car_neon', -1);                                                // a load: no car for a moment
+    await later(); t.update(id, pad, 0); await tick();
+    assert.equal(sent.length, 2);                                              // the same colour: nothing new
+    status.set('car_neon', 0);                                                 // no neon: dark
+    await later(); t.update(id, pad, 0); await tick();
+    assert.deepEqual([...sent.at(-1).data.slice(44, 47)], [0, 0, 0]);
+    t.stop(); done();
+    await tick();
+  } finally { delete globalThis.navigator.hid; }
+});
+
 test('the game\'s rumble rides in the same report: the motors\' two bits and their levels', () => {
   const off = D.triggerReport(D.TRIGGER_OFF, D.TRIGGER_OFF, false).data;
   assert.equal(off[0], 0x0c); assert.equal(off[2], 0); assert.equal(off[3], 0);

@@ -194,7 +194,6 @@ __attribute__((weak)) void host_status_set_n(const int *slot, const double *valu
 #define PL_HUD         0x9a4u
 #define VIEW_DRIFT     4u
 #define VIEW_LAST      4u            /* the last view: cameras.c puts the drift camera in every drive */
-#define CAR_RIDE       0x10u         /* car: its ride (RideInfo) */
 #define CAR_PHYSOBJ    0x34u         /* car: its physics object (Car::SetPhysicsMode 0x5F46A0): +0x38 .. +0x44 its wheels */
 #define WH_GRIP        0x188u        /* a wheel: a factor of its tyre's force (0x59D600), 1 from its constructor (0x5A81FF) */
 #define CAR_PHYS       0x20u         /* car: its physics' values (+0x2A0 the nitrous shot's length, s) */

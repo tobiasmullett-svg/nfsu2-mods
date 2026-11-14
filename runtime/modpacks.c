@@ -446,7 +446,6 @@ int vinylpacks_have(void);                              /* ... the car part data
 #define N_SLOTS       0xaau
 #define FN_TYPE_INFO  0x00610130u   /* cdecl (car type) -> its info (+0x840: what a ride's Init takes) */
 #define FN_RIDE_STOCK 0x00637040u   /* thiscall ride (0): every slot its stock part */
-#define RIDE_PARTS    0x590u        /* a ride's parts: +4 x slot */
 #define CARS0_OF(p)   (G_FECARS + (uint32_t)(p) * 0xab4cu)   /* a player's cars (garage.c's G_FECARS, CARS_SZ) */
 #define K_PART        0u            /* an entry's kind: a slot's part */
 #define K_HEAD        3u            /* ... the file's head: its profile, its write counter */
