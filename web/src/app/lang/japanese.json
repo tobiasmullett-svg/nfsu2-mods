@@ -1557,7 +1557,7 @@
   "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "USB ケーブルでつながった DualSense が見つかりません：細かな振動は Bluetooth では届きません。",
   "Windows gives the controller {n} sound channels; its vibration needs 4.": "Windows がコントローラーに割り当てている音声チャンネルは {n} つです。振動には 4 つ必要です。",
   "This browser can't send sound to the controller.": "このブラウザーはコントローラーに音を送れません。",
-  "Chrome needs the microphone permission to find the controller's vibration. Nothing is recorded.": "コントローラーの振動を見つけるには、Chrome にマイクの許可が必要です。何も録音されません。",
+  "To find the controller's vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.": "コントローラーの振動を見つけるには、アドレスバーの左のアイコンからこのページにマイクを許可して、もう一度試してください。何も録音されません。",
   "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "感じてみてください：左のグリップ、右のグリップ、そして路面、縁石、エンジン。",
   "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "完了。すべて感じましたか？「MOD」タブで Full Vibration をオンにしてください。",
   "DualSense found: connect it for its trigger effects, rumble and light.": "DualSense を検出しました：連携するとトリガー効果、振動、ライトが使えます。",

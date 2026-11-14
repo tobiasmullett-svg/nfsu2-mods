@@ -120,11 +120,17 @@ export class FullVibration {
     const outs = async () => (await md.enumerateDevices()).filter(d => d.kind === 'audiooutput');
     const list = await outs();
     if (list.some(d => d.label) || !ask) return list;
+    let why: VibrationFault = 'denied';
     try {
       const s = await md.getUserMedia({ audio: true });
       for (const tr of s.getTracks()) tr.stop();
-    } catch { return 'denied'; }
-    return outs();
+    } catch (e) {
+      // no microphone at all: the controller is no sound card here, as on a cable it brings one of its own
+      if ((e as { name?: unknown } | null)?.name === 'NotFoundError') why = 'none';
+    }
+    // allowed but not opened (another program holds the microphone): the names show all the same
+    const after = await outs();
+    return after.some(d => d.label) ? after : why;
   }
 
   static async open(ask: boolean): Promise<{ ok: true; vib: FullVibration } | { ok: false; why: VibrationFault; channels?: number }> {

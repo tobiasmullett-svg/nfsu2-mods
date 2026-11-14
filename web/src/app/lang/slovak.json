@@ -1707,7 +1707,7 @@
   "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "Na USB kábli sa nenašiel žiadny DualSense: jemné vibrácie cez Bluetooth nefungujú.",
   "Windows gives the controller {n} sound channels; its vibration needs 4.": "Windows dáva ovládaču {n} zvukové kanály; vibrácie potrebujú 4.",
   "This browser can't send sound to the controller.": "Tento prehliadač nevie posielať zvuk do ovládača.",
-  "Chrome needs the microphone permission to find the controller's vibration. Nothing is recorded.": "Chrome potrebuje povolenie na mikrofón, aby našiel vibrácie ovládača. Nič sa nenahráva.",
+  "To find the controller's vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.": "Aby sa dali nájsť vibrácie ovládača, povoľ tejto stránke mikrofón (ikona vľavo od panela s adresou) a skús to znova. Nič sa nenahráva.",
   "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Pocíť: ľavú rukoväť, pravú rukoväť, potom cestu, obrubník a motor.",
   "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Hotovo. Pocítil si všetko? Zapni Full Vibration na karte Mody.",
   "DualSense found: connect it for its trigger effects, rumble and light.": "Našiel sa DualSense: prepoj ho pre efekty spúští, vibrácie a svetlo.",

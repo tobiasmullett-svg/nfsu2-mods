@@ -1647,7 +1647,7 @@
   "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "Geen DualSense gevonden aan een USB-kabel: de fijne trilling kan niet via Bluetooth.",
   "Windows gives the controller {n} sound channels; its vibration needs 4.": "Windows geeft de controller {n} geluidskanalen; de trilling heeft er 4 nodig.",
   "This browser can't send sound to the controller.": "Deze browser kan geen geluid naar de controller sturen.",
-  "Chrome needs the microphone permission to find the controller's vibration. Nothing is recorded.": "Chrome heeft toestemming voor de microfoon nodig om de trilling van de controller te vinden. Er wordt niets opgenomen.",
+  "To find the controller's vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.": "Sta voor deze pagina de microfoon toe (het pictogram links van de adresbalk) om de trilling van de controller te vinden, en probeer het opnieuw. Er wordt niets opgenomen.",
   "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Voel het: de linkergreep, de rechtergreep, dan de weg, een curb en de motor.",
   "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Klaar. Alles gevoeld? Zet Full Vibration aan op het tabblad Mods.",
   "DualSense found: connect it for its trigger effects, rumble and light.": "DualSense gevonden: koppel hem voor triggereffecten, rommelen en licht.",

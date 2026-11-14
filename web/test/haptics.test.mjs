@@ -44,3 +44,39 @@ test('a knock between forward gears and into or out of reverse, not through neut
 test('a browser that cannot choose where its sound goes: no vibration, and why', async () => {
   assert.deepEqual(await H.FullVibration.open(true), { ok: false, why: 'unsupported' });
 });
+
+test('the microphone refused, missing or busy: why there are no names, or the names all the same', async () => {
+  const named = [{ kind: 'audioinput', label: 'Microphone (DualSense Wireless Controller)', deviceId: 'mic' },
+    { kind: 'audiooutput', label: 'Speakers (DualSense Wireless Controller)', deviceId: 'ds' }];
+  const blank = named.map(d => ({ ...d, label: '' }));
+  // the player's answer: allow (the names show), and how opening the microphone goes after it
+  let allow = false, fail, allowed = false, asked = 0, stopped = 0;
+  const md = {
+    enumerateDevices: async () => allowed ? named : blank,
+    getUserMedia: async () => {
+      asked++;
+      if (allow) allowed = true;
+      if (fail) throw new DOMException('no', fail);
+      return { getTracks: () => [{ stop: () => { stopped++; } }] };
+    },
+  };
+  const outputs = (ask, answer = {}) => {
+    allow = !!answer.allow; fail = answer.fail; allowed = false; asked = 0; stopped = 0;
+    return H.FullVibration.outputs(ask);
+  };
+  const had = globalThis.AudioContext;
+  globalThis.AudioContext = class { setSinkId() {} };
+  Object.defineProperty(globalThis.navigator, 'mediaDevices', { value: md, configurable: true });
+  try {
+    assert.deepEqual(await outputs(false), [blank[1]]);                     // not from a click: no question
+    assert.equal(asked, 0);
+    assert.deepEqual(await outputs(true, { allow: true }), [named[1]]);     // allowed: the names, the microphone let go
+    assert.equal(stopped, 1);
+    assert.equal(await outputs(true, { fail: 'NotAllowedError' }), 'denied');
+    assert.equal(await outputs(true, { fail: 'NotFoundError' }), 'none');   // no microphone: no controller on a cable
+    assert.deepEqual(await outputs(true, { allow: true, fail: 'NotReadableError' }), [named[1]]);   // held elsewhere
+  } finally {
+    delete globalThis.navigator.mediaDevices;
+    globalThis.AudioContext = had;
+  }
+});

@@ -266,7 +266,7 @@ export function controlsSheet(root: HTMLElement, id: string, opts: { tab?: Tab; 
       r.why === 'none' ? t('No DualSense found on a USB cable: its fine vibration can\'t go over Bluetooth.')
         : r.why === 'channels' ? t('Windows gives the controller {n} sound channels; its vibration needs 4.', { n: r.channels ?? 2 })
         : r.why === 'unsupported' ? t('This browser can\'t send sound to the controller.')
-        : t('Chrome needs the microphone permission to find the controller\'s vibration. Nothing is recorded.');
+        : t('To find the controller\'s vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.');
     vbtn.onclick = () => {
       vbtn.disabled = true; vmsg.hidden = false;
       vmsg.textContent = t('Feel it: the left grip, the right grip, then the road, a kerb and the engine.');

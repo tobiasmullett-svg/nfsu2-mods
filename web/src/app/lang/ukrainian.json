@@ -1707,7 +1707,7 @@
   "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "DualSense на USB-кабелі не знайдено: тонка вібрація не працює через Bluetooth.",
   "Windows gives the controller {n} sound channels; its vibration needs 4.": "Windows дає геймпаду {n} звукові канали; для вібрації потрібно 4.",
   "This browser can't send sound to the controller.": "Цей браузер не може надсилати звук на геймпад.",
-  "Chrome needs the microphone permission to find the controller's vibration. Nothing is recorded.": "Chrome потрібен дозвіл на мікрофон, щоб знайти вібрацію геймпада. Нічого не записується.",
+  "To find the controller's vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.": "Щоб знайти вібрацію контролера, дозвольте цій сторінці доступ до мікрофона (значок ліворуч від адресного рядка) і спробуйте знову. Нічого не записується.",
   "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Відчуй: ліве руків'я, праве руків'я, потім дорога, поребрик і двигун.",
   "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Готово. Усе відчув? Увімкни Full Vibration на вкладці «Моди».",
   "DualSense found: connect it for its trigger effects, rumble and light.": "Знайдено DualSense: під'єднай його для ефектів курків, вібрації та світла.",

@@ -1569,7 +1569,7 @@
   "No DualSense found on a USB cable: its fine vibration can't go over Bluetooth.": "USB kablosunda DualSense bulunamadı: ince titreşim Bluetooth üzerinden gitmez.",
   "Windows gives the controller {n} sound channels; its vibration needs 4.": "Windows oyun koluna {n} ses kanalı veriyor; titreşim için 4 gerekir.",
   "This browser can't send sound to the controller.": "Bu tarayıcı oyun koluna ses gönderemiyor.",
-  "Chrome needs the microphone permission to find the controller's vibration. Nothing is recorded.": "Chrome'un oyun kolunun titreşimini bulabilmesi için mikrofon izni gerekiyor. Hiçbir şey kaydedilmez.",
+  "To find the controller's vibration, allow the microphone for this page (the icon left of the address bar), then try again. Nothing is recorded.": "Oyun kolunun titreşimini bulmak için bu sayfaya mikrofon izni verin (adres çubuğunun solundaki simge), sonra yeniden deneyin. Hiçbir şey kaydedilmez.",
   "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Hisset: sol tutamak, sağ tutamak, ardından yol, bir bordür ve motor.",
   "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Bitti. Hepsini hissettin mi? Modlar sekmesinde Full Vibration'ı aç.",
   "DualSense found: connect it for its trigger effects, rumble and light.": "DualSense bulundu: tetik efektleri, titreşim ve ışık için bağla.",
