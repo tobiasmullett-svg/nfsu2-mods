@@ -114,6 +114,8 @@ export const WHEEL = 'nfsu2.wheel.';
 export const SHIFTER = 'nfsu2.shifter.';
 /** '1': this browser sends AltGr as Left Ctrl and Right Alt (altgr.ts) */
 export const ALTGR_CTRL = 'nfsu2.altgr-ctrl';
+/** '1': Not now on the offer to connect a DualSense (dsoffer.ts): it does not come again in this browser */
+export const DS_OFFER_OFF = 'nfsu2.dualsense.offer-off';
 
 // cloud saves (vault-ui.ts), each + the save folder
 /** the save folder's link (as JSON) */

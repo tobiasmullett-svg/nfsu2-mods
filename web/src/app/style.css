@@ -875,6 +875,11 @@ html:has(> body > .stage:not([hidden])) { overflow: hidden; }
 .friend-prompt b { font-weight: 700; color: var(--accent); }
 .friend-prompt.offer { pointer-events: auto; cursor: pointer; }
 .friend-prompt.offer:active { color: var(--accent); }
+/* the offer to connect a DualSense (dsoffer.ts): on the start page under Play, a box with a cyan edge; over a game, a
+ * line of the friend prompt's look (.friend-prompt.offer, .ds-line) */
+.ds-offer { margin-top: 12px; padding: 12px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--accent); }
+.ds-offer .msg { margin-top: 0; }
+.ds-offer .row { margin-top: 8px; }
 .friend-prompt:not(.offer) { color: var(--muted); }
 .friend-prompt.invite { order: -2; }
 /* what has to be answered in its time: a border round the box, cyan for an offer (a friend's invite, a friend to add or

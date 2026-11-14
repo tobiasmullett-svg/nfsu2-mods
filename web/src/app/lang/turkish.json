@@ -1572,6 +1572,7 @@
   "Chrome needs the microphone permission to find the controller's vibration. Nothing is recorded.": "Chrome'un oyun kolunun titreşimini bulabilmesi için mikrofon izni gerekiyor. Hiçbir şey kaydedilmez.",
   "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Hisset: sol tutamak, sağ tutamak, ardından yol, bir bordür ve motor.",
   "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Bitti. Hepsini hissettin mi? Modlar sekmesinde Full Vibration'ı aç.",
+  "DualSense found: connect it for its trigger effects, rumble and light.": "DualSense bulundu: tetik efektleri, titreşim ve ışık için bağla.",
   "A DualSense's light shows your car's underglow colour.": "DualSense'in ışığı arabanın altındaki neonun rengini gösterir.",
   "A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.": "USB kablosundaki bir DualSense yolu, motoru, bordürleri ve nitroyu hisseder."
 }

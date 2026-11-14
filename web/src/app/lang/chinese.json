@@ -1560,6 +1560,7 @@
   "Chrome needs the microphone permission to find the controller's vibration. Nothing is recorded.": "Chrome 需要麥克風權限才能找到控制器的震動。不會錄下任何聲音。",
   "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "感受一下：左手握把、右手握把，接著是路面、路緣和引擎。",
   "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "完成。都感受到了嗎？到「模組」分頁開啟 Full Vibration。",
+  "DualSense found: connect it for its trigger effects, rumble and light.": "偵測到 DualSense：連接它即可使用扳機效果、震動和燈光。",
   "A DualSense's light shows your car's underglow colour.": "DualSense 的燈光會顯示你車底霓虹燈的顏色。",
   "A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.": "用 USB 線連接的 DualSense 能感受到路面、引擎、路緣和氮氣。"
 }

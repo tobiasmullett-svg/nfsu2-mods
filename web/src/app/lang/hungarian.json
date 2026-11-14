@@ -1566,6 +1566,7 @@
   "Chrome needs the microphone permission to find the controller's vibration. Nothing is recorded.": "A Chrome-nak mikrofonengedély kell, hogy megtalálja a kontroller rezgését. Semmit nem rögzít.",
   "Feel it: the left grip, the right grip, then the road, a kerb and the engine.": "Érezd: a bal markolat, a jobb markolat, aztán az út, egy rázókő és a motor.",
   "Done. Felt all of it? Turn on Full Vibration on the Mods tab.": "Kész. Mindent éreztél? Kapcsold be a Full Vibration-t a Modok fülön.",
+  "DualSense found: connect it for its trigger effects, rumble and light.": "DualSense észlelve: csatlakoztasd a ravaszeffektekhez, a rezgéshez és a fényhez.",
   "A DualSense's light shows your car's underglow colour.": "A DualSense fénye az autód alatti neon színét mutatja.",
   "A DualSense on a USB cable feels the road, the engine, kerbs and nitrous.": "Az USB-kábelen lévő DualSense érzi az utat, a motort, a rázóköveket és a nitrót."
 }
